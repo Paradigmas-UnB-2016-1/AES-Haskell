@@ -11,32 +11,44 @@ byteStringChave = BC.pack "*S"
 
 bytesTexto = B.unpack byteStringTexto
 bytesChave = B.unpack byteStringChave
-
 charsTexto = BC.unpack byteStringTexto
 
-lerArquivo fileName = do
-  text <- readFile fileName
-  return (text)
-
+main :: IO ()
 main = do
-    print bytesTexto
-    print charsTexto
-    --print cifraTexto bytesTexto bytesChave
+    putStrLn "Menu S-AES\n\n\n"
+    putStrLn "1) Cifrar Texto"
+    putStrLn "2) Decifrar Texto"
+    putStrLn "9) Sair"
+    putStrLn "\n"
+    putStrLn "Digite a opção desejada:    "
+    opcao <- getLine
+    menu opcao
+    putStrLn ""
 
-process lines = maximum lines ++ "\n" 
+menu :: [Char] -> IO ()
+menu opcao | opcao == "1" = putStrLn (cifraTexto bytesTexto bytesChave)
+           | opcao == "2" = putStrLn "Decifrar"
+           | opcao == "9" = putStrLn "Volte sempre!"
+           | otherwise = main
 
+cifraTexto :: (Integral a1, Integral a2) => [a1] -> [a2] -> [Char]
 cifraTexto [] _ = ""
 cifraTexto bytesTexto bytesChave =
    matrizToString (cifraMatriz (carregaMatriz (take 2 bytesTexto)) (carregaMatriz (bytesChave))) ++ cifraTexto (drop 2 bytesTexto) (bytesChave)
 
+matrizToString :: (Num t, Num t1, Ix t, Ix t1) => Array (t, t1) Integer -> String
 matrizToString matriz =
     show $ concatBinario $ matriz!(1,1):matriz!(1,2):matriz!(2,1):matriz!(2,2):[]
 
+cifraMatriz :: (Num t, Num t1, Num t2, Num t3, Num t4, Num t5, Ix t, Ix t1, Ix t2, Ix t3, Ix t4, Ix t5) =>
+                Array (t4, t5) Integer -> Array (t, t1) Integer -> Array (t2, t3) Integer
 cifraMatriz matriz chave1 = 
     let chave2 = expandir chave1 1
         chave3 = expandir chave2 2
     in addRoundKey (chave3) (shiftRows $ substituteNibbles $ addRoundKey (chave2) (mixColumns $ shiftRows $ substituteNibbles $ addRoundKey chave1 matriz))
 
+expandir :: (Eq a, Num t, Num t1, Num a, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) =>
+             Array (t, t1) Integer -> a -> Array (t2, t3) Integer
 expandir chave round =
     let wA = binToBinArray (chave!(1,1)) ++ binToBinArray (chave!(1,2))
         wB = binToBinArray (chave!(2,1)) ++ binToBinArray (chave!(2,2))
@@ -64,6 +76,8 @@ rCon :: (Eq a1, Num a, Num a1) => a1 -> a
 rCon round | round == 1 = 10000000
            | round == 2 = 00110000
 
+addRoundKey :: (Num t, Num t1, Num t2, Num t3, Num t4, Num t5, Ix t, Ix t1, Ix t2, Ix t3, Ix t4, Ix t5) =>
+                Array (t2, t3) Integer -> Array (t4, t5) Integer -> Array (t, t1) Integer
 addRoundKey chave matriz = 
     array ((1, 1),(2,2)) [((1,1), realizaXorBitPorBit (binToBinArray8Bits $ chave!(1,1)) (binToBinArray8Bits $ matriz!(1,1))),
                           ((1,2), realizaXorBitPorBit (binToBinArray8Bits $ chave!(1,2)) (binToBinArray8Bits $ matriz!(1,2))),
@@ -71,6 +85,7 @@ addRoundKey chave matriz =
                           ((2,2), realizaXorBitPorBit (binToBinArray8Bits $ chave!(2,2)) (binToBinArray8Bits $ matriz!(2,2)))]
 
 --Função necessita receber duas listas com 8 elementos inteiros
+realizaXorBitPorBit :: [Integer] -> [Integer] -> Integer
 realizaXorBitPorBit bitsWa bitsWb' =
     concatBinario $ (bitsWa)!!0 `xor` (bitsWb')!!0 : 
                     (bitsWa)!!1 `xor` (bitsWb')!!1 : 
@@ -81,6 +96,8 @@ realizaXorBitPorBit bitsWa bitsWb' =
                     (bitsWa)!!6 `xor` (bitsWb')!!6 : 
                     (bitsWa)!!7 `xor` (bitsWb')!!7 : []
 
+substituteNibbles :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) =>
+                      Array (t2, t3) Integer -> Array (t, t1) Integer
 substituteNibbles matriz =
     array ((1, 1),(2,2)) [((1,1), substituiBitsSbox $ matriz!(1,1)),
                           ((1,2), substituiBitsSbox $ matriz!(1,2)),
@@ -119,6 +136,7 @@ mixColumns matriz =
                           ((2,1), realizaXorBitPorBit (binToBinArray8Bits $ multiplicaPor2 $ multiplicaPor2 (matriz!(1,1)))  (binToBinArray8Bits (matriz!(2,1)))),
                           ((2,2), realizaXorBitPorBit (binToBinArray8Bits $ multiplicaPor2 $ multiplicaPor2 (matriz!(1,2)))  (binToBinArray8Bits (matriz!(2,2))))]
 
+multiplicaPor2 :: Integer -> Integer
 multiplicaPor2 valor
     | valor < 1000 = valor * 10
     | otherwise = realizaXorBitPorBit (binToBinArray8Bits (valor*10-10000)) (binToBinArray8Bits 0011)
