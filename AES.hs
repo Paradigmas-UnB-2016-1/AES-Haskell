@@ -1,11 +1,12 @@
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as BC
+import System.IO
 import Data.List
 import Data.Array
 import Data.Bits
 import Data.Char (digitToInt)
 
-byteStringTexto = BC.pack (padTexto "dud")
+byteStringTexto = BC.pack (padTexto "ok")
 byteStringChave = BC.pack "6c8d"
 
 bytesTexto = B.unpack byteStringTexto
@@ -13,10 +14,16 @@ bytesChave = B.unpack byteStringChave
 
 charsTexto = BC.unpack byteStringTexto
 
+lerArquivo fileName = do
+  text <- readFile fileName
+  return (text)
+
 main = do
     print bytesTexto
     print charsTexto
     --print cifraTexto bytesTexto bytesChave
+
+process lines = maximum lines ++ "\n" 
 
 cifraTexto [] _ = ""
 cifraTexto bytesTexto bytesChave =
@@ -105,17 +112,29 @@ shiftRows matriz =
     array ((1, 1),(2,2))  [((1,1), matriz!(1,1)), ((1,2), matriz!(1,2)),
                            ((2,1), matriz!(2,2)), ((2,2), matriz!(2,1))]
 
-mixColumns :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) => Array (t2, t3) Integer -> Array (t, t1) Integer
-mixColumns matriz =
-    array ((1, 1),(2,2)) [((1,1), multiplicaPolinomio2por2 (matriz!(1,1):matriz!(2,1):[])!(1,1)), 
-                          ((1,2), multiplicaPolinomio2por2 (matriz!(1,2):matriz!(2,2):[])!(1,1)),
-                          ((2,1), multiplicaPolinomio2por2 (matriz!(1,1):matriz!(2,1):[])!(2,1)),
-                          ((2,2), multiplicaPolinomio2por2 (matriz!(1,2):matriz!(2,2):[])!(2,1))]
+--mixColumns :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) => Array (t2, t3) Integer -> Array (t, t1) Integer
+--mixColumns matriz =
+--    array ((1, 1),(2,2)) [((1,1), multiplicaPolinomio2por2 (matriz!(1,1):matriz!(2,1):[])!(1,1)), 
+--                          ((1,2), multiplicaPolinomio2por2 (matriz!(1,2):matriz!(2,2):[])!(1,1)),
+--                          ((2,1), multiplicaPolinomio2por2 (matriz!(1,1):matriz!(2,1):[])!(2,1)),
+--                          ((2,2), multiplicaPolinomio2por2 (matriz!(1,2):matriz!(2,2):[])!(2,1))]
 
 multiplicaPolinomio2por2 :: (Num t, Num t1, Ix t, Ix t1) => [Integer] -> Array (t, t1) Integer
 multiplicaPolinomio2por2 coluna = 
     array ((1, 1),(2,1)) [((1,1), polinomio2por2!(1,1)*coluna!!0 + polinomio2por2!(1,2)*coluna!!1), 
                           ((2,1), polinomio2por2!(2,1)*coluna!!0 + polinomio2por2!(2,2)*coluna!!1)]
+
+
+mixColumns :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) => Array (t2, t3) Integer -> Array (t, t1) Integer
+mixColumns matriz =
+    array ((1, 1),(2,2)) [((1,1), realizaXorBitPorBit (binToBinArray8Bits $ multiplicaPor2 $ multiplicaPor2 (matriz!(2,1)))  (binToBinArray8Bits (matriz!(1,1)))), 
+                          ((1,2), realizaXorBitPorBit (binToBinArray8Bits $ multiplicaPor2 $ multiplicaPor2 (matriz!(2,2)))  (binToBinArray8Bits (matriz!(1,2)))),
+                          ((2,1), realizaXorBitPorBit (binToBinArray8Bits $ multiplicaPor2 $ multiplicaPor2 (matriz!(1,1)))  (binToBinArray8Bits (matriz!(2,1)))),
+                          ((2,2), realizaXorBitPorBit (binToBinArray8Bits $ multiplicaPor2 $ multiplicaPor2 (matriz!(1,2)))  (binToBinArray8Bits (matriz!(2,2))))]
+
+multiplicaPor2 valor
+    | valor < 1000 = valor * 10
+    | otherwise = realizaXorBitPorBit (binToBinArray8Bits (valor*10-10000)) (binToBinArray8Bits 0011)
 
 carregaMatriz :: (Integral a1, Num t, Num t1, Ix t, Ix t1) => [a1] -> Array (t, t1) Integer
 carregaMatriz duasLetras = 
@@ -144,10 +163,8 @@ padTexto texto = texto ++ replicate ((length texto) `mod` 2) ' '
 concatBinario :: [Integer] -> Integer
 concatBinario = read . concatMap show
 
-polinomio2por2 = array ((1, 1),(2,2)) [((1,1), 1), 
-                                       ((1,2), 4),
-                                       ((2,1), 4),
-                                       ((2,2), 1)]
+polinomio2por2 = array ((1, 1),(2,2)) [((1,1), 0001), ((1,2), 0100),
+                                       ((2,1), 0100), ((2,2), 0001)]
 
 sBox = array ((1,1),(4,4)) [((1,1), 1001), ((1,2), 0100), ((1,3), 1010), ((1,4), 1011),
                             ((2,1), 1101), ((2,2), 0001), ((2,3), 1000), ((2,4), 0101),
@@ -160,13 +177,13 @@ sBox = array ((1,1),(4,4)) [((1,1), 1001), ((1,2), 0100), ((1,3), 1010), ((1,4),
 --						   ((3,1), ), ((3,2), ), ((3,3), ), ((3,4), ),
 --						   ((4,1), ), ((4,2), ), ((4,3), ), ((4,4), )]
 
-chave = array ((1, 1),(2,2)) [((1,1), 0010), 
-                              ((1,2), 1101),
-                              ((2,1), 0101),
-                              ((2,2), 0101)]
+chave = array ((1, 1),(2,2)) [((1,1), 1010), 
+                              ((1,2), 0111),
+                              ((2,1), 0011),
+                              ((2,2), 1011)]
 
-meuArray =  array ((1, 1),(2,2)) [((1,1), 0001), 
-                                  ((1,2), 0011),
-                                  ((2,1), 0100),
-                                  ((2,2), 1010)]
+meuArray =  array ((1, 1),(2,2)) [((1,1), 0110), 
+                                  ((1,2), 0100),
+                                  ((2,1), 1100),
+                                  ((2,2), 0000)]
 
