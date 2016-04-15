@@ -7,7 +7,7 @@ import Data.Bits
 import Data.Char (digitToInt)
 
 byteStringTexto = BC.pack (padTexto "ok")
-byteStringChave = BC.pack "6c8d"
+byteStringChave = BC.pack "*S"
 
 bytesTexto = B.unpack byteStringTexto
 bytesChave = B.unpack byteStringChave
@@ -38,8 +38,8 @@ cifraMatriz matriz chave1 =
     in addRoundKey (chave3) (shiftRows $ substituteNibbles $ addRoundKey (chave2) (mixColumns $ shiftRows $ substituteNibbles $ addRoundKey chave1 matriz))
 
 expandir chave round =
-    let wA = chave!(1,1) : chave!(1,2) : []
-        wB = chave!(2,1) : chave!(2,2) : []
+    let wA = binToBinArray (chave!(1,1)) ++ binToBinArray (chave!(1,2))
+        wB = binToBinArray (chave!(2,1)) ++ binToBinArray (chave!(2,2))
         wC = binToBinArray8Bits $ realizaXorBitPorBit (binToBinArray8Bits $ concatBinario wA) (binToBinArray8Bits $ funcaoG wB round)
         wD = binToBinArray8Bits $ realizaXorBitPorBit (wC) (binToBinArray8Bits $ concatBinario wB) 
         k1 = concatBinario $ take 4 $ wC
@@ -53,9 +53,9 @@ expandir chave round =
 
 funcaoG :: (Eq a, Num a) => [Integer] -> a -> Integer
 funcaoG bitsWa round =
-    let n0 = take 1 bitsWa 
-        n1 = drop 1 bitsWa
-    in realizaXorBitPorBit (binToBinArray8Bits $ rCon round) (binToBinArray8Bits $ concatChaves $ (pad4Bits $ binToBinArray $ substituiBitsSbox $ concatBinario n1) ++ (pad4Bits $ binToBinArray $ substituiBitsSbox $ concatBinario n0))
+    let n0 = concatBinario $ take 4 bitsWa
+        n1 = concatBinario $ drop 4 bitsWa
+    in realizaXorBitPorBit (binToBinArray8Bits $ rCon round) (binToBinArray8Bits $ concatChaves $ (pad4Bits $ binToBinArray $ substituiBitsSbox n1) ++ (pad4Bits $ binToBinArray $ substituiBitsSbox n0))
 
 concatChaves :: Show a => [a] -> Integer
 concatChaves chaves = (read $ concat $ map (show) chaves) :: Integer
@@ -112,19 +112,6 @@ shiftRows matriz =
     array ((1, 1),(2,2))  [((1,1), matriz!(1,1)), ((1,2), matriz!(1,2)),
                            ((2,1), matriz!(2,2)), ((2,2), matriz!(2,1))]
 
---mixColumns :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) => Array (t2, t3) Integer -> Array (t, t1) Integer
---mixColumns matriz =
---    array ((1, 1),(2,2)) [((1,1), multiplicaPolinomio2por2 (matriz!(1,1):matriz!(2,1):[])!(1,1)), 
---                          ((1,2), multiplicaPolinomio2por2 (matriz!(1,2):matriz!(2,2):[])!(1,1)),
---                          ((2,1), multiplicaPolinomio2por2 (matriz!(1,1):matriz!(2,1):[])!(2,1)),
---                          ((2,2), multiplicaPolinomio2por2 (matriz!(1,2):matriz!(2,2):[])!(2,1))]
-
-multiplicaPolinomio2por2 :: (Num t, Num t1, Ix t, Ix t1) => [Integer] -> Array (t, t1) Integer
-multiplicaPolinomio2por2 coluna = 
-    array ((1, 1),(2,1)) [((1,1), polinomio2por2!(1,1)*coluna!!0 + polinomio2por2!(1,2)*coluna!!1), 
-                          ((2,1), polinomio2por2!(2,1)*coluna!!0 + polinomio2por2!(2,2)*coluna!!1)]
-
-
 mixColumns :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) => Array (t2, t3) Integer -> Array (t, t1) Integer
 mixColumns matriz =
     array ((1, 1),(2,2)) [((1,1), realizaXorBitPorBit (binToBinArray8Bits $ multiplicaPor2 $ multiplicaPor2 (matriz!(2,1)))  (binToBinArray8Bits (matriz!(1,1)))), 
@@ -163,8 +150,8 @@ padTexto texto = texto ++ replicate ((length texto) `mod` 2) ' '
 concatBinario :: [Integer] -> Integer
 concatBinario = read . concatMap show
 
-polinomio2por2 = array ((1, 1),(2,2)) [((1,1), 0001), ((1,2), 0100),
-                                       ((2,1), 0100), ((2,2), 0001)]
+--polinomio2por2 = array ((1, 1),(2,2)) [((1,1), 0001), ((1,2), 0100),
+--                                       ((2,1), 0100), ((2,2), 0001)]
 
 sBox = array ((1,1),(4,4)) [((1,1), 1001), ((1,2), 0100), ((1,3), 1010), ((1,4), 1011),
                             ((2,1), 1101), ((2,2), 0001), ((2,3), 1000), ((2,4), 0101),
@@ -177,10 +164,10 @@ sBox = array ((1,1),(4,4)) [((1,1), 1001), ((1,2), 0100), ((1,3), 1010), ((1,4),
 --						   ((3,1), ), ((3,2), ), ((3,3), ), ((3,4), ),
 --						   ((4,1), ), ((4,2), ), ((4,3), ), ((4,4), )]
 
-chave = array ((1, 1),(2,2)) [((1,1), 1010), 
-                              ((1,2), 0111),
-                              ((2,1), 0011),
-                              ((2,2), 1011)]
+chave = array ((1, 1),(2,2)) [((1,1), 0010), 
+                              ((1,2), 1101),
+                              ((2,1), 0101),
+                              ((2,2), 0101)]
 
 meuArray =  array ((1, 1),(2,2)) [((1,1), 0110), 
                                   ((1,2), 0100),
