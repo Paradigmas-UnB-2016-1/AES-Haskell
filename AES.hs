@@ -1,6 +1,7 @@
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as BC
 import System.IO
+import Control.Monad
 import Data.List
 import Data.Array
 import Data.Bits
@@ -15,12 +16,13 @@ charsTexto = BC.unpack byteStringTexto
 
 main :: IO ()
 main = do
-    putStrLn "Menu S-AES\n\n\n"
+    putStrLn "\n\n**************************************"
+    putStrLn "***********   Menu S-AES   ***********"
+    putStrLn "**************************************"
     putStrLn "1) Cifrar Texto"
     putStrLn "2) Decifrar Texto"
     putStrLn "9) Sair"
-    putStrLn "\n"
-    putStrLn "Digite a opção desejada:    "
+    putStr "Digite a opção desejada:    "
     opcao <- getLine
     menu opcao
     putStrLn ""
