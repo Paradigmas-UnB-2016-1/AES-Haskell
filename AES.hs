@@ -1,30 +1,23 @@
-import qualified Data.ByteString.Lazy as BL
-import Data.Binary.Get
-import Data.Word
-import System.IO
-import System.Exit
-import Control.Monad
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as BC
+import Data.List
+import Data.Array
 
-main = forever (printMenu >> readChoice >>= menuAction)
+bytestring = BC.pack "dudu moreira"
 
-printMenu = putStr "\n\n\ne)ncriptar'\ns)air\nOpção: " >> hFlush stdout
+bytes = B.unpack bytestring
+chars = BC.unpack bytestring
 
-readChoice = hSetBuffering stdin NoBuffering >> hSetEcho stdin False >> getChar
+main = do
+    print bytes
+    print chars
+    print $ elems myArray
+    print $ assocs myArray
+    let primeiro = bytes !! 1 in print $ primeiro:[1,2]
+    print $ bytes !! 1
 
-menuAction 'e' = encriptar
-menuAction 's' = exitSuccess
-menuAction _ = hPutStrLn stderr "\n\n\nEscolha inválida"
- 
-deserialiseHeader :: Get (Word32, Word32, Word32)
-deserialiseHeader = do
-  a00 <- getWord32be
-  a01 <- getWord32be
-  a02 <- getWord32be
-  return (a00, a01, a02)
-
-encriptar :: IO ()
-encriptar = do
-  putStr "Digite o texto para ser encriptado: \n"
-  texto <- readLn
-  putStrLn( show (read texto))
-  print $ runGet deserialiseHeader texto
+myArray :: Array (Int, Int) Char
+myArray = array ((1, 1),(4,4)) [((1,1), ' '), ((1,2), ' '),((1,3), ' '), ((1,4), ' '),
+                                ((2,1), ' '), ((2,2), ' '),((2,3), ' '), ((2,4), ' '),
+                                ((3,1), ' '), ((3,2), ' '),((3,3), ' '), ((3,4), ' '),
+                                ((4,1), ' '), ((4,2), ' '),((4,3), ' '), ((4,4), ' ')]
