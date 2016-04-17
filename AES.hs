@@ -3,7 +3,7 @@ import qualified Data.ByteString.Char8 as BC
 import Data.List
 import Data.Array
 
-bytestring = BC.pack "dudu moreira"
+bytestring = BC.pack "dudu"
 
 bytes = B.unpack bytestring
 chars = BC.unpack bytestring
@@ -11,13 +11,21 @@ chars = BC.unpack bytestring
 main = do
     print bytes
     print chars
-    print $ elems myArray
-    print $ assocs myArray
-    let primeiro = bytes !! 1 in print $ primeiro:[1,2]
-    print $ bytes !! 1
+    let primeiro = bytes !! 0 in print $ toBin primeiro
+    print $ elems matriz
+    print $ assocs matriz
+    let primeiro = bytes !! 0 in print $ primeiro:[1,2]
 
-myArray :: Array (Int, Int) Char
-myArray = array ((1, 1),(4,4)) [((1,1), ' '), ((1,2), ' '),((1,3), ' '), ((1,4), ' '),
-                                ((2,1), ' '), ((2,2), ' '),((2,3), ' '), ((2,4), ' '),
-                                ((3,1), ' '), ((3,2), ' '),((3,3), ' '), ((3,4), ' '),
-                                ((4,1), ' '), ((4,2), ' '),((4,3), ' '), ((4,4), ' ')]
+toBin :: (Integral a, Num t) => a -> [t]
+toBin 0 = [0]
+toBin n = reverse (helper n)
+
+helper :: (Integral a, Num t) => a -> [t]
+helper 0 = []
+helper n | n `mod` 2 == 1 = 1 : helper (n `div` 2)
+         | n `mod` 2 == 0 = 0 : helper (n `div` 2)
+
+matriz :: Array (Int, Int) Int
+matriz = array ((1, 1),(2,2)) [((1,1), 0), ((1,2), 0),
+                                ((2,1), 0), ((2,2), 0)]
+
