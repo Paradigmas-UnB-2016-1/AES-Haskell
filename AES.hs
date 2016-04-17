@@ -3,6 +3,8 @@ import qualified Data.ByteString.Char8 as BC
 import Data.List
 import Data.Array
 
+--arquivoEntrada <- openFile "texto.txt" ReadMode
+
 bytestring = BC.pack (padTexto "dud")
 
 bytes = B.unpack bytestring
@@ -16,10 +18,10 @@ main = do
 
 cifraTexto [] = ""
 --cifraTexto bytes =
---	return (matrizToString (cifraMatriz (carregaMatriz (take 2 bytes))) ++ cifraTexto (drop 2 bytes))
+--return (matrizToString (cifraMatriz (carregaMatriz (take 2 bytes))) ++ cifraTexto (drop 2 bytes))
 
 matrizToString matriz =
-	concatBinario $ matriz!(1,1):matriz!(1,2):matriz!(2,1):matriz!(2,2):[]
+    concatBinario $ matriz!(1,1):matriz!(1,2):matriz!(2,1):matriz!(2,2):[]
 
 --cifraMatrix matriz = addRoundKey(shiftRows(subtituteNibbles(addRoundKey(mixColumns(shiftRows(subtituteNibbles(addRoundKey(matriz))))))))
 
@@ -28,10 +30,18 @@ matrizToString matriz =
 --subtituteNibbles matriz =
 
 shiftRows matriz =
-	(array ((1, 1),(2,2))  [((1,1), matriz!(1,1)), ((1,2), matriz!(1,2)),
+    (array ((1, 1),(2,2))  [((1,1), matriz!(1,1)), ((1,2), matriz!(1,2)),
                             ((2,1), matriz!(2,2)), ((2,2), matriz!(2,1))])
 
---mixColumns matriz =
+mixColumns matriz =
+    array ((1, 1),(2,2)) [((1,1), multiplicaPolinomio (matriz!(1,1):matriz!(2,1):[])!(1,1)), 
+                          ((1,2), multiplicaPolinomio (matriz!(1,2):matriz!(2,2):[])!(1,1)),
+                          ((2,1), multiplicaPolinomio (matriz!(1,1):matriz!(2,1):[])!(2,1)),
+                          ((2,2), multiplicaPolinomio (matriz!(1,2):matriz!(2,2):[])!(2,1))]
+
+multiplicaPolinomio coluna = 
+    array ((1, 1),(2,1)) [((1,1), polinomio!(1,1)*coluna!!0 + polinomio!(1,2)*coluna!!1), 
+                          ((2,1), polinomio!(2,1)*coluna!!0 + polinomio!(2,2)*coluna!!1)]
 
 carregaMatriz :: (Integral a, Num t, Num t1, Ix t, Ix t1) => [a] -> Array (t, t1) Integer
 carregaMatriz duasLetras = 
