@@ -18,14 +18,17 @@ main = do
 
 toBin :: (Integral a, Num t) => a -> [t]
 toBin 0 = [0]
-toBin n = reverse (helper n)
+toBin n = padBits (reverse (helper n))
 
 helper :: (Integral a, Num t) => a -> [t]
 helper 0 = []
 helper n | n `mod` 2 == 1 = 1 : helper (n `div` 2)
          | n `mod` 2 == 0 = 0 : helper (n `div` 2)
 
+padBits :: Num a => [a] -> [a]
+padBits xs = replicate (8 - length ys) 0 ++ ys
+    where ys = take 8 xs
+
 matriz :: Array (Int, Int) Int
 matriz = array ((1, 1),(2,2)) [((1,1), 0), ((1,2), 0),
                                 ((2,1), 0), ((2,2), 0)]
-
