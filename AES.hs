@@ -16,9 +16,9 @@ main = do
     print $ assocs matriz
     let primeiro = bytes !! 0 in print $ primeiro:[1,2]
 
-toBin :: (Integral a, Num t) => a -> [t]
-toBin 0 = [0]
-toBin n = padBits (reverse (helper n))
+toBin :: Integral a => a -> Integer
+toBin 0 = 0
+toBin n = concatBinario (padBits (reverse (helper n)))
 
 helper :: (Integral a, Num t) => a -> [t]
 helper 0 = []
@@ -28,6 +28,9 @@ helper n | n `mod` 2 == 1 = 1 : helper (n `div` 2)
 padBits :: Num a => [a] -> [a]
 padBits xs = replicate (8 - length ys) 0 ++ ys
     where ys = take 8 xs
+
+concatBinario :: [Integer] -> Integer
+concatBinario = read . concatMap show
 
 matriz :: Array (Int, Int) Int
 matriz = array ((1, 1),(2,2)) [((1,1), 0), ((1,2), 0),
