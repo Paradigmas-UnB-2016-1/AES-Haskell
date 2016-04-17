@@ -12,17 +12,21 @@ main = do
     print bytes
     print chars
     print $ elems $ carregaMatriz (take 2 bytes)
-    print $ elems matriz
-    print $ assocs matriz
 
 carregaMatriz :: (Integral a, Num t, Num t1, Ix t, Ix t1) => [a] -> Array (t, t1) Integer
 carregaMatriz duasLetras = 
-    array ((1, 1),(2,2)) [((1,1), concatBinario (take 4 (intToBin (duasLetras !! 0)))), ((1,2), concatBinario (drop 4 (intToBin (duasLetras !! 0)))),
-                          ((2,1), concatBinario (take 4 (intToBin (duasLetras !! 1)))), ((2,2), concatBinario (drop 4 (intToBin (duasLetras !! 1))))]
-	
-intToBin :: (Integral a, Num t) => a -> [t]
-intToBin 0 = [0]
-intToBin n = padBits (reverse (calculaBinario n))
+    array ((1, 1),(2,2)) [((1,1), binArrayToBin duasLetras 1 1), 
+                          ((1,2), binArrayToBin duasLetras 1 2),
+                          ((2,1), binArrayToBin duasLetras 2 1),
+                          ((2,2), binArrayToBin duasLetras 2 2)]
+
+binArrayToBin duasLetras linha coluna
+    | coluna == 1 = concatBinario (take 4 (intToBinArray (duasLetras !! (linha - 1))))
+    | coluna == 2 = concatBinario (drop 4 (intToBinArray (duasLetras !! (linha - 1))))
+
+intToBinArray :: (Integral a, Num t) => a -> [t]
+intToBinArray 0 = [0]
+intToBinArray n = padBits (reverse (calculaBinario n))
 
 calculaBinario :: (Integral a, Num t) => a -> [t]
 calculaBinario 0 = []
@@ -38,7 +42,3 @@ padTexto texto = texto ++ replicate ((length texto) `mod` 2) ' '
 
 concatBinario :: [Integer] -> Integer
 concatBinario = read . concatMap show
-
-matriz :: Array (Int, Int) Int
-matriz = array ((1, 1),(2,2)) [((1,1), 0), ((1,2), 0),
-                               ((2,1), 0), ((2,2), 0)]
