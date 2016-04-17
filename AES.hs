@@ -12,6 +12,23 @@ main = do
     print bytes
     print chars
     print $ elems $ carregaMatriz (take 2 bytes)
+    print (cifraTexto bytes)
+
+cifraTexto [] = ""
+--cifraTexto bytes =
+--	return (matrizToString (cifraMatriz (carregaMatriz (take 2 bytes))) ++ cifraTexto (drop 2 bytes))
+
+--matrizToString matriz =
+
+--cifraMatrix matriz = addRoundKey(shiftRows(subtituteNibbles(addRoundKey(mixColumns(shiftRows(subtituteNibbles(addRoundKey(matriz))))))))
+
+--addRoundKey matriz =
+
+--subtituteNibbles matriz =
+
+--shiftRows matriz =
+
+--mixColumns matriz =
 
 carregaMatriz :: (Integral a, Num t, Num t1, Ix t, Ix t1) => [a] -> Array (t, t1) Integer
 carregaMatriz duasLetras = 
@@ -20,6 +37,7 @@ carregaMatriz duasLetras =
                           ((2,1), binArrayToBin duasLetras 2 1),
                           ((2,2), binArrayToBin duasLetras 2 2)]
 
+binArrayToBin :: (Eq a, Integral a1, Num a) => [a1] -> Int -> a -> Integer
 binArrayToBin duasLetras linha coluna
     | coluna == 1 = concatBinario (take 4 (intToBinArray (duasLetras !! (linha - 1))))
     | coluna == 2 = concatBinario (drop 4 (intToBinArray (duasLetras !! (linha - 1))))
@@ -42,3 +60,13 @@ padTexto texto = texto ++ replicate ((length texto) `mod` 2) ' '
 
 concatBinario :: [Integer] -> Integer
 concatBinario = read . concatMap show
+
+teste =
+	matrizToString (meuArray)
+
+meuArray = 
+	array ((1, 1),(2,2)) [((1,1), 1), 
+                          				  ((1,2), 2),
+                          				  ((2,1), 3),
+                          				  ((2,2), 4)]
+
