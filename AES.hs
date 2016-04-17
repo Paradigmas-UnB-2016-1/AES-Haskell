@@ -11,14 +11,15 @@ chars = BC.unpack bytestring
 main = do
     print bytes
     print chars
-    let primeiro = bytes !! 0 in print $ intToBin primeiro
-    let primeiro = bytes !! 0 in print $ take 4 (intToBin primeiro)
-    let primeiro = bytes !! 0 in print $ concatBinario (take 4 (intToBin primeiro))
-    let primeiro = bytes !! 0 in print $ drop 4 (intToBin primeiro)
-    let primeiro = bytes !! 0 in print $ concatBinario (drop 4 (intToBin primeiro))
+    print $ elems $ carregaMatriz (take 2 bytes)
     print $ elems matriz
     print $ assocs matriz
 
+carregaMatriz :: (Integral a, Num t, Num t1, Ix t, Ix t1) => [a] -> Array (t, t1) Integer
+carregaMatriz duasLetras = 
+    array ((1, 1),(2,2)) [((1,1), concatBinario (take 4 (intToBin (duasLetras !! 0)))), ((1,2), concatBinario (drop 4 (intToBin (duasLetras !! 0)))),
+                          ((2,1), concatBinario (take 4 (intToBin (duasLetras !! 1)))), ((2,2), concatBinario (drop 4 (intToBin (duasLetras !! 1))))]
+	
 intToBin :: (Integral a, Num t) => a -> [t]
 intToBin 0 = [0]
 intToBin n = padBits (reverse (calculaBinario n))
