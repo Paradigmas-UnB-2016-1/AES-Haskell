@@ -18,7 +18,8 @@ cifraTexto [] = ""
 --cifraTexto bytes =
 --	return (matrizToString (cifraMatriz (carregaMatriz (take 2 bytes))) ++ cifraTexto (drop 2 bytes))
 
---matrizToString matriz =
+matrizToString matriz =
+	concatBinario $ matriz!(1,1):matriz!(1,2):matriz!(2,1):matriz!(2,2):[]
 
 --cifraMatrix matriz = addRoundKey(shiftRows(subtituteNibbles(addRoundKey(mixColumns(shiftRows(subtituteNibbles(addRoundKey(matriz))))))))
 
@@ -26,7 +27,9 @@ cifraTexto [] = ""
 
 --subtituteNibbles matriz =
 
---shiftRows matriz =
+shiftRows matriz =
+	(array ((1, 1),(2,2))  [((1,1), matriz!(1,1)), ((1,2), matriz!(1,2)),
+                            ((2,1), matriz!(2,2)), ((2,2), matriz!(2,1))])
 
 --mixColumns matriz =
 
@@ -60,13 +63,3 @@ padTexto texto = texto ++ replicate ((length texto) `mod` 2) ' '
 
 concatBinario :: [Integer] -> Integer
 concatBinario = read . concatMap show
-
-teste =
-	matrizToString (meuArray)
-
-meuArray = 
-	array ((1, 1),(2,2)) [((1,1), 1), 
-                          				  ((1,2), 2),
-                          				  ((2,1), 3),
-                          				  ((2,2), 4)]
-
