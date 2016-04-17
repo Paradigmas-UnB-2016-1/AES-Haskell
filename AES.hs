@@ -16,9 +16,9 @@ main = do
     print bytes
     print chars
     print $ elems $ carregaMatriz (take 2 bytes)
-    print (cifraTexto bytes)
+--  print (cifraTexto bytes)
 
-cifraTexto [] = ""
+-- cifraTexto [] = ""
 --cifraTexto bytes =
 --return (matrizToString (cifraMatriz (carregaMatriz (take 2 bytes))) ++ cifraTexto (drop 2 bytes))
 
@@ -28,6 +28,10 @@ matrizToString matriz =
 --cifraMatrix matriz = addRoundKey(shiftRows(subtituteNibbles(addRoundKey(mixColumns(shiftRows(subtituteNibbles(addRoundKey(matriz))))))))
 
 --addRoundKey matriz =
+
+operationXOR x y | x == 1 && y == 0 = 0
+        | x == 0 && y == 1 = 0
+        | otherwise = 1
 
 subtituteNibbles matriz =
     array ((1, 1),(2,2)) [((1,1), multiplicaPolinomio4por4 (pad4Bits (toDigits(matriz!(1,1))))),
