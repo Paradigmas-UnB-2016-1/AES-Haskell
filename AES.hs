@@ -29,12 +29,22 @@ matrizToString matriz =
 
 --addRoundKey matriz =
 
-substituteNibbles :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) => Array (t2, t3) Integer -> Array (t, t1) [Integer]
+--substituteNibbles :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) => Array (t2, t3) Integer -> Array (t, t1) [Integer]
 substituteNibbles matriz =
-    array ((1, 1),(2,2)) [((1,1), [0]),
-                          ((1,2), [0]),
-                          ((2,1), [0]),
-                          ((2,2), [0])]
+    array ((1, 1),(2,2)) [((1,1), substituiBitsSbox $ matriz!(1,1)),
+                          ((1,2), substituiBitsSbox $ matriz!(1,2)),
+                          ((2,1), substituiBitsSbox $ matriz!(2,1)),
+                          ((2,2), substituiBitsSbox $ matriz!(2,2))]
+
+substituiBitsSbox :: Integer -> Integer
+substituiBitsSbox bits = sbox!(binArrayToInt(take 2 $ pad4Bits $ binToBinArray(bits)) + 1, (binArrayToInt(drop 2 $ pad4Bits $ binToBinArray(bits))+1)) 
+
+binArrayToInt::[Integer] -> Integer 
+binArrayToInt binarys = 
+        binarys!!0*2 + binarys!!1*1
+
+--sbox!(binArrayToInt(take 2 $ pad4Bits $ binToBinArray(meuArray!(1,1))) + 1, (binArrayToInt(drop 2 $ pad4Bits $ binToBinArray(meuArray!(1,1)))+1))  
+
 
 --finalXorSubstituteNibbles $ multiplicaPolinomio4por4 (pad4Bits (binToBinArray(matriz!(1,1))))
 --finalXorSubstituteNibbles bits =
@@ -120,15 +130,12 @@ polinomio2por2 =
 --                          ((2,1), 1), ((2,2), 1), ((2,3), 0), ((2,4), 1), 
 --                          ((3,1), 1), ((3,2), 1), ((3,3), 1), ((3,4), 0),
 --                          ((4,1), 0), ((4,2), 1), ((4,3), 1), ((4,4), 1)]
-bitsToInt::[Int] -> Int 
-bitsToInt binarys = 
-        binarys!!0*8 + binarys!!1*4 + binarys!!2*2 + binarys!!3*1 
 
 sbox = 
 	array ((1,1),(4,4)) [((1,1), 1001), ((1,2), 0100), ((1,3), 1010), ((1,4), 1011),
-						 ((2,1), 1101), ((2,2), 0001), ((2,3), 1000), ((2,4), 0101),
-						 ((3,1), 0110), ((3,2), 0010), ((3,3), 0000), ((3,4), 0011),
-						 ((4,1), 1100), ((4,2), 1110), ((4,3), 1111), ((4,4), 0111)]
+			     ((2,1), 1101), ((2,2), 0001), ((2,3), 1000), ((2,4), 0101),
+			     ((3,1), 0110), ((3,2), 0010), ((3,3), 0000), ((3,4), 0011),
+			     ((4,1), 1100), ((4,2), 1110), ((4,3), 1111), ((4,4), 0111)]
 
 --sboxInverso = 
 --	matriz ((1,1),(4,4)) [ ((1,1), ), ((1,2), ), ((1,3), ), ((1,4), ),
