@@ -19,39 +19,45 @@ bytesChave = B.unpack byteStringTexto
 main = do
     print bytesTexto
     print charsTexto
---    cifraTexto bytesTexto
-    
---  print (cifraTexto bytes)
-
+--    cifraTexto bytesTexto bytesChave
+--
 --cifraTexto [] = ""
---cifraTexto bytesTexto =
+--cifraTexto bytesTexto bytesChave =
 --    return (matrizToString cifraMatriz $ (carregaMatriz (take 2 bytesTexto)) (carregaMatriz (bytesChave)) ++ cifraTexto (drop 2 bytesTexto))
-
+--
 --matrizToString matriz =
 --    concatBinario $ matriz!(1,1):matriz!(1,2):matriz!(2,1):matriz!(2,2):[]
 
---cifraMatrix :: Array (t2, t3) Integer -> Array (t, t1) Integer -> Array (t, t1) Integer 
---cifraMatrix matriz chave1 = 
+--cifraMatriz :: Array (t2, t3) Integer -> Array (t, t1) Integer -> Array (t, t1) Integer 
+--cifraMatriz matriz chave1 = 
 --	let chave2 = expandir chave1 1
 --	    chave3 = expandir chave2 2
 --	in addRoundKey $ (chave3) (shiftRows $ substituteNibbles $ addRoundKey $ (chave2) (mixColumns $ shiftRows $ substituteNibbles $ addRoundKey $ chave1 matriz))
 
-expandir :: Array (t2, t3) Integer -> Integer -> Array (t, t1) Integer 
 expandir chave round =
-	let w0 = chave!(1,1) : chave!(1,2) : []
-	    w1 = chave!(2,1) : chave!(2,2) : []
-	in array ((1, 1),(2,2)) [((1,1), take 4 binToBinArray8Bits(realizaXorBitPorBit (w0) (funcaoG w1 round))),
-                             ((1,2), drop 4 binToBinArray8Bits(realizaXorBitPorBit (w0) (funcaoG w1 round))),
-                             ((2,1), take 4 (realizaXorBitPorBit (binToBinArray8Bits(realizaXorBitPorBit (w0) (funcaoG w1))) (w1))),
-                             ((2,2), drop 4 (realizaXorBitPorBit (binToBinArray8Bits(realizaXorBitPorBit (w0) (funcaoG w1))) (w1)))]
+    let wA = chave!(1,1) : chave!(1,2) : []
+        wB = chave!(2,1) : chave!(2,2) : []
+        wC = binToBinArray8Bits $ realizaXorBitPorBit (binToBinArray8Bits $ concatBinario wA) (binToBinArray8Bits $ funcaoG wB round)
+        wD = binToBinArray8Bits $ realizaXorBitPorBit (wC) (binToBinArray8Bits $ concatBinario wB) 
+        k1 = take 4 $ wC
+        k2 = drop 4 $ wC
+        k3 = take 4 $ wD
+        k4 = drop 4 $ wD
+    in array ((1, 1),(2,2)) [((1,1), k1),
+                             ((1,2), k2),
+                             ((2,1), k3),
+                             ((2,2), k4)]
 
+funcaoG :: (Eq a, Num a) => [Integer] -> a -> Integer
 funcaoG bitsWa round =
     let n0 = take 1 bitsWa 
         n1 = drop 1 bitsWa
     in realizaXorBitPorBit (binToBinArray8Bits $ rCon round) (binToBinArray8Bits $ concatChaves $ (pad4Bits $ binToBinArray $ substituiBitsSbox $ concatBinario n1) ++ (pad4Bits $ binToBinArray $ substituiBitsSbox $ concatBinario n0))
 
+concatChaves :: Show a => [a] -> Integer
 concatChaves chaves = (read $ concat $ map (show) chaves) :: Integer
 
+rCon :: (Eq a1, Num a, Num a1) => a1 -> a
 rCon round | round == 1 = 10000000
            | round == 2 = 00110000
 
