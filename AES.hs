@@ -31,7 +31,7 @@ menu opcao texto chave
     | opcao == "9" = putStrLn "\nVolte sempre!"
     | otherwise = main
 
-decifraTexto :: [Char] -> [Char] -> [Char]
+decifraTexto :: [Integer] -> [Char] -> [Char]
 decifraTexto texto chave =
     let textoBinArray = binToBinArrayArray texto
         chaveBytes = stringToBytes chave
@@ -191,6 +191,13 @@ mixColumns matriz =
                           ((2,1), realizaXorBitPorBit (binToBinArray8Bits $ multiplicaPor2 $ multiplicaPor2 (matriz!(1,1)))  (binToBinArray8Bits (matriz!(2,1)))),
                           ((2,2), realizaXorBitPorBit (binToBinArray8Bits $ multiplicaPor2 $ multiplicaPor2 (matriz!(1,2)))  (binToBinArray8Bits (matriz!(2,2))))]
 
+invMixColumns :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) => Array (t2, t3) Integer -> Array (t, t1) Integer
+invMixColumns matriz =
+    array ((1, 1),(2,2)) [((1,1), realizaXorBitPorBit (binToBinArray8Bits $ multiplicaPor2 (matriz!(2,1)))  (binToBinArray8Bits $ realizaXorBitPorBit (binToBinArray8Bits (matriz!(1,1))) ( binToBinArray8Bits $ multiplicaPor2 $ multiplicaPor2 $ multiplicaPor2 (matriz!(1,1)) ) )), 
+                          ((1,2), realizaXorBitPorBit (binToBinArray8Bits $ multiplicaPor2 (matriz!(2,2)))  (binToBinArray8Bits $ realizaXorBitPorBit (binToBinArray8Bits (matriz!(1,2))) ( binToBinArray8Bits $ multiplicaPor2 $ multiplicaPor2 $ multiplicaPor2 (matriz!(1,2)) ) )),
+                          ((2,1), realizaXorBitPorBit (binToBinArray8Bits $ multiplicaPor2 (matriz!(1,1)))  (binToBinArray8Bits $ realizaXorBitPorBit (binToBinArray8Bits (matriz!(2,1))) ( binToBinArray8Bits $ multiplicaPor2 $ multiplicaPor2 $ multiplicaPor2 (matriz!(2,1)) ) )),
+                          ((2,2), realizaXorBitPorBit (binToBinArray8Bits $ multiplicaPor2 (matriz!(1,2)))  (binToBinArray8Bits $ realizaXorBitPorBit (binToBinArray8Bits (matriz!(2,2))) ( binToBinArray8Bits $ multiplicaPor2 $ multiplicaPor2 $ multiplicaPor2 (matriz!(2,2)) ) ))]
+
 multiplicaPor2 :: Integer -> Integer
 multiplicaPor2 valor
     | valor < 1000 = valor * 10
@@ -236,7 +243,12 @@ chave2 = array ((1, 1),(2,2)) [((1,1), 1011),
                               ((2,2), 1001)]
 
 meuArray =  array ((1, 1),(2,2)) [((1,1), 0110), 
-                                  ((1,2), 1111),
-                                  ((2,1), 0110),
-                                  ((2,2), 1011)]
+                                  ((1,2), 0100),
+                                  ((2,1), 1100),
+                                  ((2,2), 0000)]
+
+meuArray2 =  array ((1, 1),(2,2)) [((1,1), 0011), 
+                                   ((1,2), 0100),
+                                   ((2,1), 0111),
+                                   ((2,2), 0011)]
 
