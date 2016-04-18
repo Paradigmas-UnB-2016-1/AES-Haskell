@@ -22,14 +22,26 @@ main = do
 --cifraTexto bytes =
 --return (matrizToString (cifraMatriz (carregaMatriz (take 2 bytes))) ++ cifraTexto (drop 2 bytes))
 
-matrizToString matriz =
-    concatBinario $ matriz!(1,1):matriz!(1,2):matriz!(2,1):matriz!(2,2):[]
+--matrizToString matriz =
+--    concatBinario $ matriz!(1,1):matriz!(1,2):matriz!(2,1):matriz!(2,2):[]
 
---cifraMatrix matriz = addRoundKey(shiftRows(substituteNibbles(addRoundKey(mixColumns(shiftRows(substituteNibbles(addRoundKey(matriz))))))))
+--cifraMatrix matriz chave1 = 
+--	let chave2 = expandir chave 
+--	    chave3 = expandir chave2
+--	in addRoundKey $ (chave3) (shiftRows $ substituteNibbles $ addRoundKey $ (chave2) (mixColumns $ shiftRows $ substituteNibbles $ addRoundKey $ chave matriz))
 
---addRoundKey matriz =
+addRoundKey chave matriz = 
+    array ((1, 1),(2,2)) [((1,1), realizaXorAddRoundKey (chave!(1,1)) (matriz!(1,1))),
+                          ((1,2), realizaXorAddRoundKey (chave!(1,2)) (matriz!(1,2))),
+                          ((2,1), realizaXorAddRoundKey (chave!(2,1)) (matriz!(2,1))),
+                          ((2,2), realizaXorAddRoundKey (chave!(2,2)) (matriz!(2,2)))]
 
---substituteNibbles :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) => Array (t2, t3) Integer -> Array (t, t1) [Integer]
+realizaXorAddRoundKey bitsChave bitsMatriz =
+    concatBinario $ (binToBinArray bitsChave)!!0 `xor` (binToBinArray bitsMatriz)!!0 : 
+                    (binToBinArray bitsChave)!!1 `xor` (binToBinArray bitsMatriz)!!1 : 
+                    (binToBinArray bitsChave)!!2 `xor` (binToBinArray bitsMatriz)!!2 : 
+                    (binToBinArray bitsChave)!!3 `xor` (binToBinArray bitsMatriz)!!3 : []
+
 substituteNibbles matriz =
     array ((1, 1),(2,2)) [((1,1), substituiBitsSbox $ matriz!(1,1)),
                           ((1,2), substituiBitsSbox $ matriz!(1,2)),
@@ -37,16 +49,13 @@ substituteNibbles matriz =
                           ((2,2), substituiBitsSbox $ matriz!(2,2))]
 
 substituiBitsSbox :: Integer -> Integer
-substituiBitsSbox bits = sbox!(binArrayToInt(take 2 $ pad4Bits $ binToBinArray(bits)) + 1, (binArrayToInt(drop 2 $ pad4Bits $ binToBinArray(bits))+1)) 
+substituiBitsSbox bits = sBox!(binArrayToInt(take 2 $ binToBinArray(bits)) + 1, (binArrayToInt(drop 2 $ binToBinArray(bits))+1)) 
 
 binArrayToInt::[Integer] -> Integer 
 binArrayToInt binarys = 
         binarys!!0*2 + binarys!!1*1
 
---sbox!(binArrayToInt(take 2 $ pad4Bits $ binToBinArray(meuArray!(1,1))) + 1, (binArrayToInt(drop 2 $ pad4Bits $ binToBinArray(meuArray!(1,1)))+1))  
-
-
---finalXorSubstituteNibbles $ multiplicaPolinomio4por4 (pad4Bits (binToBinArray(matriz!(1,1))))
+--finalXorSubstituteNibbles $ multiplicaPolinomio4por4 (binToBinArray(matriz!(1,1)))
 --finalXorSubstituteNibbles bits =
 --	bits!!0 `xor` 1 :    
 --	bits!!1 `xor` 0 :    
@@ -58,7 +67,7 @@ pad4Bits xs = replicate (4 - length ys) 0 ++ ys
     where ys = take 4 xs
 
 binToBinArray :: Integer -> [Integer]
-binToBinArray = map (fromIntegral . digitToInt) . show
+binToBinArray = pad4Bits . map (fromIntegral . digitToInt) . show
 
 --multiplicaPolinomio4por4 :: [Integer] -> [Integer]
 --multiplicaPolinomio4por4 bits = 
@@ -74,7 +83,7 @@ binToBinArray = map (fromIntegral . digitToInt) . show
 shiftRows :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) => Array (t2, t3) e -> Array (t, t1) e
 shiftRows matriz =
     array ((1, 1),(2,2))  [((1,1), matriz!(1,1)), ((1,2), matriz!(1,2)),
-                            ((2,1), matriz!(2,2)), ((2,2), matriz!(2,1))]
+                           ((2,1), matriz!(2,2)), ((2,2), matriz!(2,1))]
 
 mixColumns :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) => Array (t2, t3) Integer -> Array (t, t1) Integer
 mixColumns matriz =
@@ -131,23 +140,26 @@ polinomio2por2 =
 --                          ((3,1), 1), ((3,2), 1), ((3,3), 1), ((3,4), 0),
 --                          ((4,1), 0), ((4,2), 1), ((4,3), 1), ((4,4), 1)]
 
-sbox = 
-	array ((1,1),(4,4)) [((1,1), 1001), ((1,2), 0100), ((1,3), 1010), ((1,4), 1011),
-			     ((2,1), 1101), ((2,2), 0001), ((2,3), 1000), ((2,4), 0101),
-			     ((3,1), 0110), ((3,2), 0010), ((3,3), 0000), ((3,4), 0011),
-			     ((4,1), 1100), ((4,2), 1110), ((4,3), 1111), ((4,4), 0111)]
+sBox = array ((1,1),(4,4)) [((1,1), 1001), ((1,2), 0100), ((1,3), 1010), ((1,4), 1011),
+                            ((2,1), 1101), ((2,2), 0001), ((2,3), 1000), ((2,4), 0101),
+                            ((3,1), 0110), ((3,2), 0010), ((3,3), 0000), ((3,4), 0011),
+                            ((4,1), 1100), ((4,2), 1110), ((4,3), 1111), ((4,4), 0111)]
 
---sboxInverso = 
---	matriz ((1,1),(4,4)) [ ((1,1), ), ((1,2), ), ((1,3), ), ((1,4), ),
+--sBoxInversa = 
+--	array ((1,1),(4,4)) [ ((1,1), ), ((1,2), ), ((1,3), ), ((1,4), ),
 --						   ((2,1), ), ((2,2), ), ((2,3), ), ((2,4), ),
 --						   ((3,1), ), ((3,2), ), ((3,3), ), ((3,4), ),
---	--					   ((4,1), ), ((4,2), ), ((4,3), ), ((4,4), )]
+--						   ((4,1), ), ((4,2), ), ((4,3), ), ((4,4), )]
 
 teste = substituteNibbles meuArray
 
-meuArray = 
-    array ((1, 1),(2,2)) [((1,1), 1), 
-                          ((1,2), 11),
-                          ((2,1), 100),
-                          ((2,2), 101)]
+chave = array ((1, 1),(2,2)) [((1,1), 100), 
+                              ((1,2), 1011),
+                              ((2,1), 101),
+                              ((2,2), 1001)]
+
+meuArray =  array ((1, 1),(2,2)) [((1,1), 1), 
+                                  ((1,2), 11),
+                                  ((2,1), 100),
+                                  ((2,2), 101)]
 
