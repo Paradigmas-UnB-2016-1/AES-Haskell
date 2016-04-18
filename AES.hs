@@ -24,13 +24,22 @@ main = do
     putStr "Digite a chave:    "
     chave <- getLine
     menu opcao texto chave
-    putStrLn ""
 
 menu opcao texto chave
     | opcao == "1" = putStrLn ("\nTexto cifrado: " ++ cifraTexto texto chave)
-    | opcao == "2" = putStrLn ("\nTexto decifrado: " ++ "")
+    | opcao == "2" = putStrLn ("\nTexto decifrado: " ++ decifraTexto texto chave)
     | opcao == "9" = putStrLn "\nVolte sempre!"
     | otherwise = main
+
+decifraTexto :: [Char] -> [Char] -> [Char]
+decifraTexto texto chave =
+    let textoBinArray = binToBinArrayArray texto
+        chaveBytes = stringToBytes chave
+        chaveBinArray = bytesToBin chaveBytes
+    in ""
+
+binToBinArrayArray [] = []
+binToBinArrayArray texto = take 8 texto : binToBinArrayArray (drop 8 texto)
 
 cifraTexto :: [Char] -> [Char] -> [Char]
 cifraTexto texto chave =
@@ -45,8 +54,6 @@ stringToBytes texto = BC.pack (padTexto texto)
 
 bytesToBin :: BC.ByteString -> [[Integer]]
 bytesToBin = map (pad8Bits . intToBinArray) . B.unpack
-
---charsTexto = BC.unpack byteStringTexto
 
 cifraBin :: [[Integer]] -> [[Integer]] -> [Char]
 cifraBin [] _ = ""
