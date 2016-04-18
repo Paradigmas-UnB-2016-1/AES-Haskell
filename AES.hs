@@ -17,51 +17,53 @@ main = do
     putStrLn "1) Cifrar Texto"
     putStrLn "2) Decifrar Texto"
     putStrLn "9) Sair"
-    putStr "Digite a opção desejada:    "
+    putStr "Digite a opção desejada:  "
     opcao <- getLine
-    menu opcao
+    putStr "Digite o texto:    "
+    texto <- getLine
+    putStr "Digite a chave:    "
+    chave <- getLine
+    menu opcao texto chave
     putStrLn ""
 
-menu :: [Char] -> IO ()
-menu opcao 
-    | opcao == "2" = putStrLn "Decifrar"
-    | opcao == "9" = putStrLn "Volte sempre!"
+menu opcao texto chave
+    | opcao == "1" = putStrLn ("\nTexto cifrado: " ++ cifraTexto texto chave)
+    | opcao == "2" = putStrLn ("\nTexto decifrado: " ++ "")
+    | opcao == "9" = putStrLn "\nVolte sempre!"
     | otherwise = main
 
---printCifraTexto =
---    let texto = recebeTexto
---        bytes = bytesTexto texto
---        binArrays = textoToBinArray bytes
---    in putStrLn (cifraTexto bytesTexto bytesChave)
+cifraTexto :: [Char] -> [Char] -> [Char]
+cifraTexto texto chave =
+    let textoBytes = stringToBytes texto
+        textoBinArray = bytesToBin textoBytes
+        chaveBytes = stringToBytes chave
+        chaveBinArray = bytesToBin chaveBytes
+    in cifraBin textoBinArray chaveBinArray
 
-recebeTexto = do
-    putStr "Digite o texto para ser cifrado: "
-    palavra <- getLine
-    return palavra
+stringToBytes :: [Char] -> BC.ByteString
+stringToBytes texto = BC.pack (padTexto texto)
 
-bytesTexto :: [Char] -> BC.ByteString
-bytesTexto texto = BC.pack (padTexto texto)
+bytesToBin :: BC.ByteString -> [[Integer]]
+bytesToBin = map (pad8Bits . intToBinArray) . B.unpack
 
-textoToBinArray = map (concatBinario . intToBinArray) . B.unpack
-
-byteStringChave = BC.pack "*S"
-
-bytesChave = B.unpack byteStringChave
 --charsTexto = BC.unpack byteStringTexto
 
-cifraTexto [] _ = ""
-cifraTexto bytesTexto bytesChave =
-   matrizToString (cifraMatriz (carregaMatriz (take 4 bytesTexto)) (carregaMatriz (bytesChave))) ++ cifraTexto (drop 4 bytesTexto) (bytesChave)
+cifraBin :: [[Integer]] -> [[Integer]] -> [Char]
+cifraBin [] _ = ""
+cifraBin bytesTexto bytesChave =
+   matrizToString (cifraMatriz (carregaMatriz (take 2 bytesTexto)) (carregaMatriz (bytesChave))) ++ cifraBin (drop 2 bytesTexto) (bytesChave)
 
+carregaMatriz :: (Num t, Num t1, Ix t, Ix t1) => [[Integer]] -> Array (t, t1) Integer
 carregaMatriz listaBinarios = 
-    array ((1, 1),(2,2)) [((1,1), listaBinarios!!0), 
-                          ((1,2), listaBinarios!!1),
-                          ((2,1), listaBinarios!!2),
-                          ((2,2), listaBinarios!!3)]
+    array ((1, 1),(2,2)) [((1,1), concatBinario $ take 4 $ listaBinarios!!0), 
+                          ((1,2), concatBinario $ drop 4 $ listaBinarios!!0),
+                          ((2,1), concatBinario $ take 4 $ listaBinarios!!1),
+                          ((2,2), concatBinario $ drop 4 $ listaBinarios!!1)]
 
-matrizToString :: (Num t, Num t1, Ix t, Ix t1) => Array (t, t1) Integer -> String
+matrizToString :: (Num t, Num t1, Ix t, Ix t1) => Array (t, t1) Integer -> [Char]
 matrizToString matriz =
-    show $ concatBinario $ matriz!(1,1):matriz!(1,2):[]
+    let lista = binToBinArray(matriz!(1,1)) ++ binToBinArray(matriz!(1,2)) ++ binToBinArray(matriz!(2,1)) ++ binToBinArray(matriz!(2,2))
+    in concat $ map show lista
 
 --precisa arrendondar depois
 base2ToBase10 [] _ = 0
@@ -203,7 +205,7 @@ chave = array ((1, 1),(2,2)) [((1,1), 0010),
                               ((2,2), 0101)]
 
 meuArray =  array ((1, 1),(2,2)) [((1,1), 0110), 
-                                  ((1,2), 0100),
-                                  ((2,1), 1100),
-                                  ((2,2), 0000)]
+                                  ((1,2), 1111),
+                                  ((2,1), 0110),
+                                  ((2,2), 1011)]
 
