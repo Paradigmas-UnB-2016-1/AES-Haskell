@@ -36,6 +36,25 @@ main = do
 --	    chave3 = expandir chave2 2
 --	in addRoundKey $ (chave3) (shiftRows $ substituteNibbles $ addRoundKey $ (chave2) (mixColumns $ shiftRows $ substituteNibbles $ addRoundKey $ chave1 matriz))
 
+expandir :: Array (t2, t3) Integer -> Integer -> Array (t, t1) Integer 
+expandir chave round =
+	let w0 = chave!(1,1) : chave!(1,2) : []
+	    w1 = chave!(2,1) : chave!(2,2) : []
+	in array ((1, 1),(2,2)) [((1,1), take 4 binToBinArray8Bits(realizaXorBitPorBit (w0) (funcaoG w1 round))),
+                             ((1,2), drop 4 binToBinArray8Bits(realizaXorBitPorBit (w0) (funcaoG w1 round))),
+                             ((2,1), take 4 (realizaXorBitPorBit (binToBinArray8Bits(realizaXorBitPorBit (w0) (funcaoG w1))) (w1))),
+                             ((2,2), drop 4 (realizaXorBitPorBit (binToBinArray8Bits(realizaXorBitPorBit (w0) (funcaoG w1))) (w1)))]
+
+funcaoG bitsWa round =
+    let n0 = take 1 bitsWa 
+        n1 = drop 1 bitsWa
+    in realizaXorBitPorBit (binToBinArray8Bits $ rCon round) (binToBinArray8Bits $ concatChaves $ (pad4Bits $ binToBinArray $ substituiBitsSbox $ concatBinario n1) ++ (pad4Bits $ binToBinArray $ substituiBitsSbox $ concatBinario n0))
+
+concatChaves chaves = (read $ concat $ map (show) chaves) :: Integer
+
+rCon round | round == 1 = 10000000
+           | round == 2 = 00110000
+
 addRoundKey chave matriz = 
     array ((1, 1),(2,2)) [((1,1), realizaXorBitPorBit (binToBinArray8Bits $ chave!(1,1)) (binToBinArray8Bits $ matriz!(1,1))),
                           ((1,2), realizaXorBitPorBit (binToBinArray8Bits $ chave!(1,2)) (binToBinArray8Bits $ matriz!(1,2))),
