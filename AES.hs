@@ -27,7 +27,7 @@ main = do
 
 menu opcao texto chave
     | opcao == "1" = putStrLn ("\nTexto cifrado: " ++ cifraTexto texto chave)
-    | opcao == "2" = putStrLn ("\nTexto decifrado: " ++ decifraTexto texto chave)
+    | opcao == "2" = putStrLn ("\nTexto decifrado: ")
     | opcao == "9" = putStrLn "\nVolte sempre!"
     | otherwise = main
 
@@ -46,12 +46,12 @@ decifraBin [] _ = ""
 decifraBin bytesTexto bytesChave =
    matrizToString (decifraMatriz (carregaMatriz (take 2 bytesTexto)) (carregaMatriz (bytesChave))) ++ decifraBin (drop 2 bytesTexto) (bytesChave)
 
-cifraMatriz :: (Num t, Num t1, Num t2, Num t3, Num t4, Num t5, Ix t, Ix t1, Ix t2, Ix t3, Ix t4, Ix t5) =>
+decifraMatriz :: (Num t, Num t1, Num t2, Num t3, Num t4, Num t5, Ix t, Ix t1, Ix t2, Ix t3, Ix t4, Ix t5) =>
                 Array (t4, t5) Integer -> Array (t, t1) Integer -> Array (t2, t3) Integer
-cifraMatriz matriz chave1 = 
+decifraMatriz matriz chave1 = 
     let chave2 = expandir chave1 1
         chave3 = expandir chave2 2
-    in addRoundKey (chave1) (invSubstituteNibbles $ invShiftRows $ invMixColumns $ addRoundKey (chave2) (invSubstituteNibbles $ invShiftRows $ addRoundKey chave3 matriz))
+    in addRoundKey (chave1) (invSubstituteNibbles $ shiftRows $ invMixColumns $ addRoundKey (chave2) (invSubstituteNibbles $ shiftRows $ addRoundKey chave3 matriz))
 
 cifraTexto :: [Char] -> [Char] -> [Char]
 cifraTexto texto chave =
@@ -115,7 +115,7 @@ funcaoG :: (Eq a, Num a) => [Integer] -> a -> Integer
 funcaoG bitsWa round =
     let n0 = concatBinario $ take 4 bitsWa
         n1 = concatBinario $ drop 4 bitsWa
-    in realizaXorBitPorBit (binToBinArray8Bits $ rCon round) (binToBinArray8Bits $ concatChaves $ (pad4Bits $ binToBinArray $ substituiBitsSbox n1) ++ (pad4Bits $ binToBinArray $ substituiBitsSbox n0))
+    in realizaXorBitPorBit (binToBinArray8Bits $ rCon round) (binToBinArray8Bits $ concatChaves $ (pad4Bits $ binToBinArray $ substituiBitsSbox n1 sBox) ++ (pad4Bits $ binToBinArray $ substituiBitsSbox n0 sBox))
 
 concatChaves :: Show a => [a] -> Integer
 concatChaves chaves = (read $ concat $ map (show) chaves) :: Integer
@@ -146,16 +146,23 @@ realizaXorBitPorBit bitsWa bitsWb' =
 
 substituteNibbles :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) =>
                       Array (t2, t3) Integer -> Array (t, t1) Integer
-substituteNibbles matriz =
-    array ((1, 1),(2,2)) [((1,1), substituiBitsSbox $ matriz!(1,1)),
-                          ((1,2), substituiBitsSbox $ matriz!(1,2)),
-                          ((2,1), substituiBitsSbox $ matriz!(2,1)),
-                          ((2,2), substituiBitsSbox $ matriz!(2,2))]
+substituteNibbles matriz = 
+    array ((1, 1),(2,2)) [((1,1), substituiBitsSbox (matriz!(1,1)) sBox),
+                          ((1,2), substituiBitsSbox (matriz!(1,2)) sBox),
+                          ((2,1), substituiBitsSbox (matriz!(2,1)) sBox),
+                          ((2,2), substituiBitsSbox (matriz!(2,2)) sBox)]
 
-substituiBitsSbox :: Integer -> Integer
-substituiBitsSbox bits = sBox!(binArrayToInt(take 2 $ binToBinArray(bits)) + 1, (binArrayToInt(drop 2 $ binToBinArray(bits))+1)) 
+invSubstituteNibbles :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) =>
+                      Array (t2, t3) Integer -> Array (t, t1) Integer
+invSubstituteNibbles matriz =
+    array ((1, 1),(2,2)) [((1,1), substituiBitsSbox (matriz!(1,1)) invSBox),
+                          ((1,2), substituiBitsSbox (matriz!(1,2)) invSBox),
+                          ((2,1), substituiBitsSbox (matriz!(2,1)) invSBox),
+                          ((2,2), substituiBitsSbox (matriz!(2,2)) invSBox)]
 
-binArrayToInt::[Integer] -> Integer 
+substituiBitsSbox bits box = box!(binArrayToInt(take 2 $ binToBinArray(bits)) + 1, (binArrayToInt(drop 2 $ binToBinArray(bits))+1)) 
+
+binArrayToInt::[Integer] -> Integer
 binArrayToInt bits = bits!!0 * 2 + bits!!1 * 1
 
 pad4Bits :: Num a => [a] -> [a]
@@ -212,16 +219,21 @@ sBox = array ((1,1),(4,4)) [((1,1), 1001), ((1,2), 0100), ((1,3), 1010), ((1,4),
                             ((3,1), 0110), ((3,2), 0010), ((3,3), 0000), ((3,4), 0011),
                             ((4,1), 1100), ((4,2), 1110), ((4,3), 1111), ((4,4), 0111)]
 
---sBoxInversa = 
---  array ((1,1),(4,4)) [ ((1,1), ), ((1,2), ), ((1,3), ), ((1,4), ),
---               ((2,1), ), ((2,2), ), ((2,3), ), ((2,4), ),
---               ((3,1), ), ((3,2), ), ((3,3), ), ((3,4), ),
---               ((4,1), ), ((4,2), ), ((4,3), ), ((4,4), )]
+invSBox = 
+  array ((1,1),(4,4)) [ ((1,1), 1010), ((1,2), 0101), ((1,3), 1001), ((1,4), 1011),
+                        ((2,1), 0001), ((2,2), 0111), ((2,3), 1000), ((2,4), 1111),
+                        ((3,1), 0110), ((3,2), 0000), ((3,3), 0010), ((3,4), 0011),
+                        ((4,1), 1100), ((4,2), 0100), ((4,3), 1101), ((4,4), 1110)]
 
 chave = array ((1, 1),(2,2)) [((1,1), 0010), 
                               ((1,2), 1101),
                               ((2,1), 0101),
                               ((2,2), 0101)]
+
+chave2 = array ((1, 1),(2,2)) [((1,1), 1011), 
+                              ((1,2), 1100),
+                              ((2,1), 1110),
+                              ((2,2), 1001)]
 
 meuArray =  array ((1, 1),(2,2)) [((1,1), 0110), 
                                   ((1,2), 1111),
