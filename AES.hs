@@ -36,10 +36,22 @@ decifraTexto texto chave =
     let textoBinArray = binToBinArrayArray texto
         chaveBytes = stringToBytes chave
         chaveBinArray = bytesToBin chaveBytes
-    in ""
+    in decifraBin textoBinArray chaveBinArray
 
 binToBinArrayArray [] = []
 binToBinArrayArray texto = take 8 texto : binToBinArrayArray (drop 8 texto)
+
+decifraBin :: [[Integer]] -> [[Integer]] -> [Char]
+decifraBin [] _ = ""
+decifraBin bytesTexto bytesChave =
+   matrizToString (decifraMatriz (carregaMatriz (take 2 bytesTexto)) (carregaMatriz (bytesChave))) ++ decifraBin (drop 2 bytesTexto) (bytesChave)
+
+cifraMatriz :: (Num t, Num t1, Num t2, Num t3, Num t4, Num t5, Ix t, Ix t1, Ix t2, Ix t3, Ix t4, Ix t5) =>
+                Array (t4, t5) Integer -> Array (t, t1) Integer -> Array (t2, t3) Integer
+cifraMatriz matriz chave1 = 
+    let chave2 = expandir chave1 1
+        chave3 = expandir chave2 2
+    in addRoundKey (chave1) (invSubstituteNibbles $ invShiftRows $ invMixColumns $ addRoundKey (chave2) (invSubstituteNibbles $ invShiftRows $ addRoundKey chave3 matriz))
 
 cifraTexto :: [Char] -> [Char] -> [Char]
 cifraTexto texto chave =
