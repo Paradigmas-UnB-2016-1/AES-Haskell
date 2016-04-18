@@ -27,11 +27,11 @@ main = do
 
 menu opcao texto chave
     | opcao == "1" = putStrLn ("\nTexto cifrado: " ++ cifraTexto texto chave)
-    | opcao == "2" = putStrLn ("\nTexto decifrado: ")
+    | opcao == "2" = putStrLn ("\nTexto decifrado: " )
     | opcao == "9" = putStrLn "\nVolte sempre!"
     | otherwise = main
 
-decifraTexto :: [Integer] -> [Char] -> [Char]
+
 decifraTexto texto chave =
     let textoBinArray = binToBinArrayArray texto
         chaveBytes = stringToBytes chave
@@ -85,6 +85,7 @@ matrizToString matriz =
     in concat $ map show lista
 
 --precisa arrendondar depois
+base2ToBase10 :: Fractional a => [a] -> a -> a
 base2ToBase10 [] _ = 0
 base2ToBase10 (x:xs) mult = x * mult + base2ToBase10 xs mult/2
 
@@ -115,7 +116,7 @@ funcaoG :: (Eq a, Num a) => [Integer] -> a -> Integer
 funcaoG bitsWa round =
     let n0 = concatBinario $ take 4 bitsWa
         n1 = concatBinario $ drop 4 bitsWa
-    in realizaXorBitPorBit (binToBinArray8Bits $ rCon round) (binToBinArray8Bits $ concatChaves $ (pad4Bits $ binToBinArray $ substituiBitsSbox n1 sBox) ++ (pad4Bits $ binToBinArray $ substituiBitsSbox n0 sBox))
+    in realizaXorBitPorBit (binToBinArray8Bits $ rCon round) (binToBinArray8Bits $ concatChaves $ (pad4Bits $ binToBinArray $ substituteBitsSbox n1 sBox) ++ (pad4Bits $ binToBinArray $ substituteBitsSbox n0 sBox))
 
 concatChaves :: Show a => [a] -> Integer
 concatChaves chaves = (read $ concat $ map (show) chaves) :: Integer
@@ -147,20 +148,21 @@ realizaXorBitPorBit bitsWa bitsWb' =
 substituteNibbles :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) =>
                       Array (t2, t3) Integer -> Array (t, t1) Integer
 substituteNibbles matriz = 
-    array ((1, 1),(2,2)) [((1,1), substituiBitsSbox (matriz!(1,1)) sBox),
-                          ((1,2), substituiBitsSbox (matriz!(1,2)) sBox),
-                          ((2,1), substituiBitsSbox (matriz!(2,1)) sBox),
-                          ((2,2), substituiBitsSbox (matriz!(2,2)) sBox)]
+    array ((1, 1),(2,2)) [((1,1), substituteBitsSbox (matriz!(1,1)) sBox),
+                          ((1,2), substituteBitsSbox (matriz!(1,2)) sBox),
+                          ((2,1), substituteBitsSbox (matriz!(2,1)) sBox),
+                          ((2,2), substituteBitsSbox (matriz!(2,2)) sBox)]
 
 invSubstituteNibbles :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) =>
                       Array (t2, t3) Integer -> Array (t, t1) Integer
 invSubstituteNibbles matriz =
-    array ((1, 1),(2,2)) [((1,1), substituiBitsSbox (matriz!(1,1)) invSBox),
-                          ((1,2), substituiBitsSbox (matriz!(1,2)) invSBox),
-                          ((2,1), substituiBitsSbox (matriz!(2,1)) invSBox),
-                          ((2,2), substituiBitsSbox (matriz!(2,2)) invSBox)]
+    array ((1, 1),(2,2)) [((1,1), substituteBitsSbox (matriz!(1,1)) invSBox),
+                          ((1,2), substituteBitsSbox (matriz!(1,2)) invSBox),
+                          ((2,1), substituteBitsSbox (matriz!(2,1)) invSBox),
+                          ((2,2), substituteBitsSbox (matriz!(2,2)) invSBox)]
 
-substituiBitsSbox bits box = box!(binArrayToInt(take 2 $ binToBinArray(bits)) + 1, (binArrayToInt(drop 2 $ binToBinArray(bits))+1)) 
+substituteBitsSbox :: Integer -> Array (Integer, Integer) e -> e
+substituteBitsSbox bits box = box!(binArrayToInt(take 2 $ binToBinArray(bits)) + 1, (binArrayToInt(drop 2 $ binToBinArray(bits))+1)) 
 
 binArrayToInt::[Integer] -> Integer
 binArrayToInt bits = bits!!0 * 2 + bits!!1 * 1
@@ -203,8 +205,7 @@ multiplicaPor2 valor
     | valor < 1000 = valor * 10
     | otherwise = realizaXorBitPorBit (binToBinArray8Bits (valor*10-10000)) (binToBinArray8Bits 0011)
 
---intToBinArray :: (Integral a, Num t) => a -> [t]
---intToBinArray 0 = [0]
+intToBinArray :: (Integral a1, Num a) => a1 -> [a]
 intToBinArray n = reverse (base10ToBase2 n)
 
 base10ToBase2 :: (Integral a, Num t) => a -> [t]
@@ -217,9 +218,6 @@ padTexto texto = texto ++ replicate ((length texto) `mod` 2) ' '
 
 concatBinario :: [Integer] -> Integer
 concatBinario = read . concatMap show
-
---polinomio2por2 = array ((1, 1),(2,2)) [((1,1), 0001), ((1,2), 0100),
---                                       ((2,1), 0100), ((2,2), 0001)]
 
 sBox = array ((1,1),(4,4)) [((1,1), 1001), ((1,2), 0100), ((1,3), 1010), ((1,4), 1011),
                             ((2,1), 1101), ((2,2), 0001), ((2,3), 1000), ((2,4), 0101),
@@ -237,18 +235,8 @@ chave = array ((1, 1),(2,2)) [((1,1), 0010),
                               ((2,1), 0101),
                               ((2,2), 0101)]
 
-chave2 = array ((1, 1),(2,2)) [((1,1), 1011), 
-                              ((1,2), 1100),
-                              ((2,1), 1110),
-                              ((2,2), 1001)]
-
 meuArray =  array ((1, 1),(2,2)) [((1,1), 0110), 
                                   ((1,2), 0100),
                                   ((2,1), 1100),
                                   ((2,2), 0000)]
-
-meuArray2 =  array ((1, 1),(2,2)) [((1,1), 0011), 
-                                   ((1,2), 0100),
-                                   ((2,1), 0111),
-                                   ((2,2), 0011)]
 
