@@ -18,7 +18,9 @@ main = do
     putStrLn "***********   Menu S-AES   ***********"
     putStrLn "**************************************"
     putStrLn "1) Cifrar Texto"
-    putStrLn "2) Decifrar Texto"
+    putStrLn "2) Cifrar Texto (binário)"
+    putStrLn "3) Decifrar Texto"
+    putStrLn "4) Decifrar Texto (binário)"
     putStrLn "9) Sair"
     putStr "Digite a opção desejada:  "
     opcao <- getLine
@@ -30,17 +32,28 @@ main = do
 
 menu :: [Char] -> [Char] -> [Char] -> IO ()
 menu opcao texto chave
-    | opcao == "1" = putStrLn ("\nTexto cifrado: " ++ cifraTexto texto chave)
-    | opcao == "2" = putStrLn ("\nTexto decifrado: " ++ decifraTexto (binTextoToBinArray texto) chave)
+    | opcao == "1" = putStrLn ("\nTexto cifrado: " ++ (show $ cifraTexto texto chave 0))
+    | opcao == "2" = putStrLn ("\nTexto cifrado: " ++ (show $ cifraTexto texto chave 1))
+    | opcao == "3" = putStrLn ("\nTexto decifrado: " ++ decifraTexto texto chave 0)
+    | opcao == "4" = putStrLn ("\nTexto decifrado: " ++ decifraTexto texto chave 1)
     | opcao == "9" = putStrLn "\nVolte sempre!"
     | otherwise = main
 
-decifraTexto :: [Integer] -> [Char] -> [Char]
-decifraTexto texto chave =
-    let textoBinArray = binArrayToBinArrayArray texto
+decifraTexto :: [Char] -> [Char] -> Integer -> [Char]
+decifraTexto texto chave binario =
+    let textoBinArray = textoCifradoParaBytes texto binario
         chaveBytes = stringToBytes chave
         chaveBinArray = bytesToBin chaveBytes
-    in binArrayToTexto $ binTextoToBinArrayArray $ decifraBin textoBinArray chaveBinArray
+    in binArrayToTexto $ binTextoToBinArrayArray $ decifraBin textoBinArray chaveBinArray binario
+
+textoCifradoParaBytes texto binario
+    | binario == 0 = formataBinArray $ retira4PrimeirosBits $ bytesToBin $ stringToBytes texto
+    | binario == 1 = binArrayToBinArrayArray $ binTextoToBinArray texto
+
+formataBinArray [] = []
+formataBinArray binArray = ((binArray!!0 ++ binArray!!1) : []) ++ (formataBinArray (drop 2 binArray))
+
+retira4PrimeirosBits binArray = map (drop 4) binArray
 
 binArrayToTexto :: [[Integer]] -> [Char]
 binArrayToTexto [] = ""
@@ -64,10 +77,10 @@ binArrayToBinArrayArray :: [a] -> [[a]]
 binArrayToBinArrayArray [] = []
 binArrayToBinArrayArray texto = take 8 texto : binArrayToBinArrayArray (drop 8 texto)
 
-decifraBin :: [[Integer]] -> [[Integer]] -> [Char]
-decifraBin [] _ = ""
-decifraBin bytesTexto bytesChave =
-   matrizToString (decifraMatriz (carregaMatriz (take 2 bytesTexto)) (carregaMatriz (bytesChave))) ++ decifraBin (drop 2 bytesTexto) (bytesChave)
+decifraBin :: [[Integer]] -> [[Integer]] -> Integer -> [Char]
+decifraBin [] _ _ = ""
+decifraBin bytesTexto bytesChave binario =
+   matrizToString (decifraMatriz (carregaMatriz (take 2 bytesTexto)) (carregaMatriz (bytesChave))) (binario) ++ decifraBin (drop 2 bytesTexto) (bytesChave) (binario)
 
 decifraMatriz :: (Num t, Num t1, Num t2, Num t3, Num t4, Num t5, Ix t, Ix t1, Ix t2, Ix t3, Ix t4, Ix t5) =>
                 Array (t4, t5) Integer -> Array (t, t1) Integer -> Array (t2, t3) Integer
@@ -76,13 +89,12 @@ decifraMatriz matriz chave1 =
         chave3 = expandir chave2 2
     in addRoundKey (chave1) (invSubstituteNibbles $ shiftRows $ invMixColumns $ addRoundKey (chave2) (invSubstituteNibbles $ shiftRows $ addRoundKey chave3 matriz))
 
-cifraTexto :: [Char] -> [Char] -> [Char]
-cifraTexto texto chave =
+cifraTexto texto chave binario =
     let textoBytes = stringToBytes texto
         textoBinArray = bytesToBin textoBytes
         chaveBytes = stringToBytes chave
         chaveBinArray = bytesToBin chaveBytes
-    in cifraBin textoBinArray chaveBinArray
+    in cifraBin textoBinArray chaveBinArray binario
 
 stringToBytes :: [Char] -> BC.ByteString
 stringToBytes texto = BC.pack (padTexto texto)
@@ -90,10 +102,9 @@ stringToBytes texto = BC.pack (padTexto texto)
 bytesToBin :: BC.ByteString -> [[Integer]]
 bytesToBin = map (pad8Bits . intToBinArray) . B.unpack
 
-cifraBin :: [[Integer]] -> [[Integer]] -> [Char]
-cifraBin [] _ = ""
-cifraBin bytesTexto bytesChave =
-   matrizToString (cifraMatriz (carregaMatriz (take 2 bytesTexto)) (carregaMatriz (bytesChave))) ++ cifraBin (drop 2 bytesTexto) (bytesChave)
+cifraBin [] _ _ = ""
+cifraBin bytesTexto bytesChave binario =
+   matrizToString (cifraMatriz (carregaMatriz (take 2 bytesTexto)) (carregaMatriz (bytesChave))) binario ++ cifraBin (drop 2 bytesTexto) (bytesChave) binario
 
 carregaMatriz :: (Num t, Num t1, Ix t, Ix t1) => [[Integer]] -> Array (t, t1) Integer
 carregaMatriz listaBinarios = 
@@ -102,10 +113,14 @@ carregaMatriz listaBinarios =
                           ((2,1), concatBinario $ take 4 $ listaBinarios!!1),
                           ((2,2), concatBinario $ drop 4 $ listaBinarios!!1)]
 
-matrizToString :: (Num t, Num t1, Ix t, Ix t1) => Array (t, t1) Integer -> [Char]
-matrizToString matriz =
-    let lista = binToBinArray4Bits(matriz!(1,1)) ++ binToBinArray4Bits(matriz!(1,2)) ++ binToBinArray4Bits(matriz!(2,1)) ++ binToBinArray4Bits(matriz!(2,2))
-    in concat $ map show lista
+
+matrizToString matriz binario =
+    let lista = binToBinArray4Bits(matriz!(1,1)) : binToBinArray4Bits(matriz!(1,2)) : binToBinArray4Bits(matriz!(2,1)) : binToBinArray4Bits(matriz!(2,2)) : []
+    in formataTextoCifrado lista binario
+
+formataTextoCifrado lista binario
+    | binario == 0 = binArrayToTexto lista
+    | binario == 1 = show $ concatBinario $ concat lista
 
 cifraMatriz :: (Num t, Num t1, Num t2, Num t3, Num t4, Num t5, Ix t, Ix t1, Ix t2, Ix t3, Ix t4, Ix t5) =>
                 Array (t4, t5) Integer -> Array (t, t1) Integer -> Array (t2, t3) Integer
