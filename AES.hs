@@ -5,28 +5,25 @@ import Data.Array
 import Data.Bits
 import Data.Char (digitToInt)
 
---arquivoEntrada <- openFile "texto.txt" ReadMode
-
 byteStringTexto = BC.pack (padTexto "dud")
-
 byteStringChave = BC.pack "6c8d"
 
 bytesTexto = B.unpack byteStringTexto
-charsTexto = BC.unpack byteStringTexto
+bytesChave = B.unpack byteStringChave
 
-bytesChave = B.unpack byteStringTexto
+charsTexto = BC.unpack byteStringTexto
 
 main = do
     print bytesTexto
     print charsTexto
---    cifraTexto bytesTexto bytesChave
+    --print cifraTexto bytesTexto bytesChave
 
---cifraTexto [] _ = ""
---cifraTexto bytesTexto bytesChave =
---    return (matrizToString cifraMatriz $ (carregaMatriz (take 2 bytesTexto)) (carregaMatriz (bytesChave)) ++ cifraTexto (drop 2 bytesTexto))
+cifraTexto [] _ = ""
+cifraTexto bytesTexto bytesChave =
+   matrizToString (cifraMatriz (carregaMatriz (take 2 bytesTexto)) (carregaMatriz (bytesChave))) ++ cifraTexto (drop 2 bytesTexto) (bytesChave)
 
 matrizToString matriz =
-    concatBinario $ matriz!(1,1):matriz!(1,2):matriz!(2,1):matriz!(2,2):[]
+    show $ concatBinario $ matriz!(1,1):matriz!(1,2):matriz!(2,1):matriz!(2,2):[]
 
 cifraMatriz matriz chave1 = 
     let chave2 = expandir chave1 1
@@ -168,8 +165,8 @@ chave = array ((1, 1),(2,2)) [((1,1), 0010),
                               ((2,1), 0101),
                               ((2,2), 0101)]
 
-meuArray =  array ((1, 1),(2,2)) [((1,1), 1), 
-                                  ((1,2), 11),
-                                  ((2,1), 100),
-                                  ((2,2), 101)]
+meuArray =  array ((1, 1),(2,2)) [((1,1), 0001), 
+                                  ((1,2), 0011),
+                                  ((2,1), 0100),
+                                  ((2,2), 1010)]
 
