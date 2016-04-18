@@ -20,29 +20,28 @@ main = do
     print bytesTexto
     print charsTexto
 --    cifraTexto bytesTexto bytesChave
---
---cifraTexto [] = ""
+
+--cifraTexto [] _ = ""
 --cifraTexto bytesTexto bytesChave =
 --    return (matrizToString cifraMatriz $ (carregaMatriz (take 2 bytesTexto)) (carregaMatriz (bytesChave)) ++ cifraTexto (drop 2 bytesTexto))
---
---matrizToString matriz =
---    concatBinario $ matriz!(1,1):matriz!(1,2):matriz!(2,1):matriz!(2,2):[]
 
---cifraMatriz :: Array (t2, t3) Integer -> Array (t, t1) Integer -> Array (t, t1) Integer 
---cifraMatriz matriz chave1 = 
---	let chave2 = expandir chave1 1
---	    chave3 = expandir chave2 2
---	in addRoundKey $ (chave3) (shiftRows $ substituteNibbles $ addRoundKey $ (chave2) (mixColumns $ shiftRows $ substituteNibbles $ addRoundKey $ chave1 matriz))
+matrizToString matriz =
+    concatBinario $ matriz!(1,1):matriz!(1,2):matriz!(2,1):matriz!(2,2):[]
+
+cifraMatriz matriz chave1 = 
+    let chave2 = expandir chave1 1
+        chave3 = expandir chave2 2
+    in addRoundKey (chave3) (shiftRows $ substituteNibbles $ addRoundKey (chave2) (mixColumns $ shiftRows $ substituteNibbles $ addRoundKey chave1 matriz))
 
 expandir chave round =
     let wA = chave!(1,1) : chave!(1,2) : []
         wB = chave!(2,1) : chave!(2,2) : []
         wC = binToBinArray8Bits $ realizaXorBitPorBit (binToBinArray8Bits $ concatBinario wA) (binToBinArray8Bits $ funcaoG wB round)
         wD = binToBinArray8Bits $ realizaXorBitPorBit (wC) (binToBinArray8Bits $ concatBinario wB) 
-        k1 = take 4 $ wC
-        k2 = drop 4 $ wC
-        k3 = take 4 $ wD
-        k4 = drop 4 $ wD
+        k1 = concatBinario $ take 4 $ wC
+        k2 = concatBinario $ drop 4 $ wC
+        k3 = concatBinario $ take 4 $ wD
+        k4 = concatBinario $ drop 4 $ wD
     in array ((1, 1),(2,2)) [((1,1), k1),
                              ((1,2), k2),
                              ((2,1), k3),
@@ -90,13 +89,6 @@ substituiBitsSbox bits = sBox!(binArrayToInt(take 2 $ binToBinArray(bits)) + 1, 
 binArrayToInt::[Integer] -> Integer 
 binArrayToInt bits = bits!!0 * 2 + bits!!1 * 1
 
---finalXorSubstituteNibbles $ multiplicaPolinomio4por4 (binToBinArray(matriz!(1,1)))
---finalXorSubstituteNibbles bits =
---	bits!!0 `xor` 1 :    
---	bits!!1 `xor` 0 :    
---	bits!!2 `xor` 0 :    
---	bits!!3 `xor` 1 :    []
-
 pad4Bits :: Num a => [a] -> [a]
 pad4Bits xs = replicate (4 - length ys) 0 ++ ys
     where ys = take 4 xs
@@ -110,17 +102,6 @@ binToBinArray = pad4Bits . map (fromIntegral . digitToInt) . show
 
 binToBinArray8Bits :: Integer -> [Integer]
 binToBinArray8Bits = pad8Bits . map (fromIntegral . digitToInt) . show
-
---multiplicaPolinomio4por4 :: [Integer] -> [Integer]
---multiplicaPolinomio4por4 bits = 
---    --concatBinario(
---    polinomio4por4!(1,1)*bits!!0 `xor` polinomio4por4!(1,2)*bits!!1 `xor` polinomio4por4!(1,3)*bits!!2 `xor` polinomio4por4!(1,4)*bits!!3 :
---    polinomio4por4!(2,1)*bits!!0 `xor` polinomio4por4!(2,2)*bits!!1 `xor` polinomio4por4!(2,3)*bits!!2 `xor` polinomio4por4!(2,4)*bits!!3 :
---    polinomio4por4!(3,1)*bits!!0 `xor` polinomio4por4!(3,2)*bits!!1 `xor` polinomio4por4!(3,3)*bits!!2 `xor` polinomio4por4!(3,4)*bits!!3 :
---    polinomio4por4!(4,1)*bits!!0 `xor` polinomio4por4!(4,2)*bits!!1 `xor` polinomio4por4!(4,3)*bits!!2 `xor` polinomio4por4!(4,4)*bits!!3 :
---    []
---    --)
-
 
 shiftRows :: (Num t, Num t1, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) => Array (t2, t3) e -> Array (t, t1) e
 shiftRows matriz =
@@ -166,17 +147,10 @@ padTexto texto = texto ++ replicate ((length texto) `mod` 2) ' '
 concatBinario :: [Integer] -> Integer
 concatBinario = read . concatMap show
 
-polinomio2por2 = 
-    array ((1, 1),(2,2)) [((1,1), 1), 
-                          ((1,2), 4),
-                          ((2,1), 4),
-                          ((2,2), 1)]
-
---polinomio4por4 = 
---    array ((1, 1),(4,4)) [((1,1), 1), ((1,2), 0), ((1,3), 1), ((1,4), 1),
---                          ((2,1), 1), ((2,2), 1), ((2,3), 0), ((2,4), 1), 
---                          ((3,1), 1), ((3,2), 1), ((3,3), 1), ((3,4), 0),
---                          ((4,1), 0), ((4,2), 1), ((4,3), 1), ((4,4), 1)]
+polinomio2por2 = array ((1, 1),(2,2)) [((1,1), 1), 
+                                       ((1,2), 4),
+                                       ((2,1), 4),
+                                       ((2,2), 1)]
 
 sBox = array ((1,1),(4,4)) [((1,1), 1001), ((1,2), 0100), ((1,3), 1010), ((1,4), 1011),
                             ((2,1), 1101), ((2,2), 0001), ((2,3), 1000), ((2,4), 0101),
@@ -188,8 +162,6 @@ sBox = array ((1,1),(4,4)) [((1,1), 1001), ((1,2), 0100), ((1,3), 1010), ((1,4),
 --						   ((2,1), ), ((2,2), ), ((2,3), ), ((2,4), ),
 --						   ((3,1), ), ((3,2), ), ((3,3), ), ((3,4), ),
 --						   ((4,1), ), ((4,2), ), ((4,3), ), ((4,4), )]
-
-teste = substituteNibbles meuArray
 
 chave = array ((1, 1),(2,2)) [((1,1), 0010), 
                               ((1,2), 1101),
