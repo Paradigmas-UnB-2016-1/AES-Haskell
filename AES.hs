@@ -6,13 +6,8 @@ import Data.List
 import Data.Array
 import Data.Bits
 import Data.Char (digitToInt)
-
-byteStringTexto = BC.pack (padTexto "ok")
-byteStringChave = BC.pack "*S"
-
-bytesTexto = B.unpack byteStringTexto
-bytesChave = B.unpack byteStringChave
-charsTexto = BC.unpack byteStringTexto
+import Data.Char (intToDigit)
+import Numeric (showIntAtBase)
 
 main :: IO ()
 main = do
@@ -28,19 +23,49 @@ main = do
     putStrLn ""
 
 menu :: [Char] -> IO ()
-menu opcao | opcao == "1" = putStrLn (cifraTexto bytesTexto bytesChave)
-           | opcao == "2" = putStrLn "Decifrar"
-           | opcao == "9" = putStrLn "Volte sempre!"
-           | otherwise = main
+menu opcao 
+    | opcao == "2" = putStrLn "Decifrar"
+    | opcao == "9" = putStrLn "Volte sempre!"
+    | otherwise = main
 
-cifraTexto :: (Integral a1, Integral a2) => [a1] -> [a2] -> [Char]
+--printCifraTexto =
+--    let texto = recebeTexto
+--        bytes = bytesTexto texto
+--        binArrays = textoToBinArray bytes
+--    in putStrLn (cifraTexto bytesTexto bytesChave)
+
+recebeTexto = do
+    putStr "Digite o texto para ser cifrado: "
+    palavra <- getLine
+    return palavra
+
+bytesTexto :: [Char] -> BC.ByteString
+bytesTexto texto = BC.pack (padTexto texto)
+
+textoToBinArray = map (concatBinario . intToBinArray) . B.unpack
+
+byteStringChave = BC.pack "*S"
+
+bytesChave = B.unpack byteStringChave
+--charsTexto = BC.unpack byteStringTexto
+
 cifraTexto [] _ = ""
 cifraTexto bytesTexto bytesChave =
-   matrizToString (cifraMatriz (carregaMatriz (take 2 bytesTexto)) (carregaMatriz (bytesChave))) ++ cifraTexto (drop 2 bytesTexto) (bytesChave)
+   matrizToString (cifraMatriz (carregaMatriz (take 4 bytesTexto)) (carregaMatriz (bytesChave))) ++ cifraTexto (drop 4 bytesTexto) (bytesChave)
+
+carregaMatriz listaBinarios = 
+    array ((1, 1),(2,2)) [((1,1), listaBinarios!!0), 
+                          ((1,2), listaBinarios!!1),
+                          ((2,1), listaBinarios!!2),
+                          ((2,2), listaBinarios!!3)]
 
 matrizToString :: (Num t, Num t1, Ix t, Ix t1) => Array (t, t1) Integer -> String
 matrizToString matriz =
-    show $ concatBinario $ matriz!(1,1):matriz!(1,2):matriz!(2,1):matriz!(2,2):[]
+    show $ concatBinario $ matriz!(1,1):matriz!(1,2):[]
+
+--precisa arrendondar depois
+base2ToBase10 [] _ = 0
+base2ToBase10 (x:xs) mult = x * mult + base2ToBase10 xs mult/2
 
 cifraMatriz :: (Num t, Num t1, Num t2, Num t3, Num t4, Num t5, Ix t, Ix t1, Ix t2, Ix t3, Ix t4, Ix t5) =>
                 Array (t4, t5) Integer -> Array (t, t1) Integer -> Array (t2, t3) Integer
@@ -143,26 +168,14 @@ multiplicaPor2 valor
     | valor < 1000 = valor * 10
     | otherwise = realizaXorBitPorBit (binToBinArray8Bits (valor*10-10000)) (binToBinArray8Bits 0011)
 
-carregaMatriz :: (Integral a1, Num t, Num t1, Ix t, Ix t1) => [a1] -> Array (t, t1) Integer
-carregaMatriz duasLetras = 
-    array ((1, 1),(2,2)) [((1,1), binArrayToBin duasLetras 1 1), 
-                          ((1,2), binArrayToBin duasLetras 1 2),
-                          ((2,1), binArrayToBin duasLetras 2 1),
-                          ((2,2), binArrayToBin duasLetras 2 2)]
+--intToBinArray :: (Integral a, Num t) => a -> [t]
+--intToBinArray 0 = [0]
+intToBinArray n = reverse (base10ToBase2 n)
 
-binArrayToBin :: (Eq a, Integral a1, Num a) => [a1] -> Int -> a -> Integer
-binArrayToBin duasLetras linha coluna
-    | coluna == 1 = concatBinario (take 4 (intToBinArray (duasLetras !! (linha - 1))))
-    | coluna == 2 = concatBinario (drop 4 (intToBinArray (duasLetras !! (linha - 1))))
-
-intToBinArray :: (Integral a, Num t) => a -> [t]
-intToBinArray 0 = [0]
-intToBinArray n = pad8Bits (reverse (calculaBinario n))
-
-calculaBinario :: (Integral a, Num t) => a -> [t]
-calculaBinario 0 = []
-calculaBinario n | n `mod` 2 == 1 = 1 : calculaBinario (n `div` 2)
-                 | n `mod` 2 == 0 = 0 : calculaBinario (n `div` 2)
+base10ToBase2 :: (Integral a, Num t) => a -> [t]
+base10ToBase2 0 = []
+base10ToBase2 n | n `mod` 2 == 1 = 1 : base10ToBase2 (n `div` 2)
+                | n `mod` 2 == 0 = 0 : base10ToBase2 (n `div` 2)
 
 padTexto :: [Char] -> [Char]
 padTexto texto = texto ++ replicate ((length texto) `mod` 2) ' '
@@ -179,10 +192,10 @@ sBox = array ((1,1),(4,4)) [((1,1), 1001), ((1,2), 0100), ((1,3), 1010), ((1,4),
                             ((4,1), 1100), ((4,2), 1110), ((4,3), 1111), ((4,4), 0111)]
 
 --sBoxInversa = 
---	array ((1,1),(4,4)) [ ((1,1), ), ((1,2), ), ((1,3), ), ((1,4), ),
---						   ((2,1), ), ((2,2), ), ((2,3), ), ((2,4), ),
---						   ((3,1), ), ((3,2), ), ((3,3), ), ((3,4), ),
---						   ((4,1), ), ((4,2), ), ((4,3), ), ((4,4), )]
+--  array ((1,1),(4,4)) [ ((1,1), ), ((1,2), ), ((1,3), ), ((1,4), ),
+--               ((2,1), ), ((2,2), ), ((2,3), ), ((2,4), ),
+--               ((3,1), ), ((3,2), ), ((3,3), ), ((3,4), ),
+--               ((4,1), ), ((4,2), ), ((4,3), ), ((4,4), )]
 
 chave = array ((1, 1),(2,2)) [((1,1), 0010), 
                               ((1,2), 1101),
