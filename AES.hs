@@ -8,6 +8,9 @@ import Data.Bits
 import Data.Char (digitToInt)
 import Data.Char (intToDigit)
 import Numeric (showIntAtBase)
+import Data.Char (digitToInt)
+import Data.Char (chr)
+import Data.List (foldl')
 
 main :: IO ()
 main = do
@@ -25,21 +28,41 @@ main = do
     chave <- getLine
     menu opcao texto chave
 
+menu :: [Char] -> [Char] -> [Char] -> IO ()
 menu opcao texto chave
     | opcao == "1" = putStrLn ("\nTexto cifrado: " ++ cifraTexto texto chave)
-    | opcao == "2" = putStrLn ("\nTexto decifrado: " )
+    | opcao == "2" = putStrLn ("\nTexto decifrado: " ++ decifraTexto (binTextoToBinArray texto) chave)
     | opcao == "9" = putStrLn "\nVolte sempre!"
     | otherwise = main
 
-
+decifraTexto :: [Integer] -> [Char] -> [Char]
 decifraTexto texto chave =
-    let textoBinArray = binToBinArrayArray texto
+    let textoBinArray = binArrayToBinArrayArray texto
         chaveBytes = stringToBytes chave
         chaveBinArray = bytesToBin chaveBytes
-    in decifraBin textoBinArray chaveBinArray
+    in binArrayToTexto $ binTextoToBinArrayArray $ decifraBin textoBinArray chaveBinArray
 
-binToBinArrayArray [] = []
-binToBinArrayArray texto = take 8 texto : binToBinArrayArray (drop 8 texto)
+binArrayToTexto :: [[Integer]] -> [Char]
+binArrayToTexto [] = ""
+binArrayToTexto binArray = map (chr . base2ToBase10 . show . concatBinario) binArray
+
+base2ToBase10 :: String -> Int
+base2ToBase10 = foldl' (\acc x -> acc * 2 + digitToInt x) 0
+
+binTextoToBinArrayArray :: String -> [[Integer]]
+binTextoToBinArrayArray binTexto = binArrayToBinArrayArray $ binTextoToBinArray binTexto
+
+binTextoToBinArray :: String -> [Integer]
+binTextoToBinArray texto = padBinario $ binToBinArray (read texto :: Integer)
+
+padBinario :: Num a => [a] -> [a]
+padBinario bin
+    | (length bin) `mod` 8 == 0 = bin
+    | otherwise = replicate (8 - ((length bin) `mod` 8)) 0 ++ bin
+
+binArrayToBinArrayArray :: [a] -> [[a]]
+binArrayToBinArrayArray [] = []
+binArrayToBinArrayArray texto = take 8 texto : binArrayToBinArrayArray (drop 8 texto)
 
 decifraBin :: [[Integer]] -> [[Integer]] -> [Char]
 decifraBin [] _ = ""
@@ -81,13 +104,8 @@ carregaMatriz listaBinarios =
 
 matrizToString :: (Num t, Num t1, Ix t, Ix t1) => Array (t, t1) Integer -> [Char]
 matrizToString matriz =
-    let lista = binToBinArray(matriz!(1,1)) ++ binToBinArray(matriz!(1,2)) ++ binToBinArray(matriz!(2,1)) ++ binToBinArray(matriz!(2,2))
+    let lista = binToBinArray4Bits(matriz!(1,1)) ++ binToBinArray4Bits(matriz!(1,2)) ++ binToBinArray4Bits(matriz!(2,1)) ++ binToBinArray4Bits(matriz!(2,2))
     in concat $ map show lista
-
---precisa arrendondar depois
-base2ToBase10 :: Fractional a => [a] -> a -> a
-base2ToBase10 [] _ = 0
-base2ToBase10 (x:xs) mult = x * mult + base2ToBase10 xs mult/2
 
 cifraMatriz :: (Num t, Num t1, Num t2, Num t3, Num t4, Num t5, Ix t, Ix t1, Ix t2, Ix t3, Ix t4, Ix t5) =>
                 Array (t4, t5) Integer -> Array (t, t1) Integer -> Array (t2, t3) Integer
@@ -99,8 +117,8 @@ cifraMatriz matriz chave1 =
 expandir :: (Eq a, Num t, Num t1, Num a, Num t2, Num t3, Ix t, Ix t1, Ix t2, Ix t3) =>
              Array (t, t1) Integer -> a -> Array (t2, t3) Integer
 expandir chave round =
-    let wA = binToBinArray (chave!(1,1)) ++ binToBinArray (chave!(1,2))
-        wB = binToBinArray (chave!(2,1)) ++ binToBinArray (chave!(2,2))
+    let wA = binToBinArray4Bits (chave!(1,1)) ++ binToBinArray4Bits (chave!(1,2))
+        wB = binToBinArray4Bits (chave!(2,1)) ++ binToBinArray4Bits (chave!(2,2))
         wC = binToBinArray8Bits $ realizaXorBitPorBit (binToBinArray8Bits $ concatBinario wA) (binToBinArray8Bits $ funcaoG wB round)
         wD = binToBinArray8Bits $ realizaXorBitPorBit (wC) (binToBinArray8Bits $ concatBinario wB) 
         k1 = concatBinario $ take 4 $ wC
@@ -116,7 +134,7 @@ funcaoG :: (Eq a, Num a) => [Integer] -> a -> Integer
 funcaoG bitsWa round =
     let n0 = concatBinario $ take 4 bitsWa
         n1 = concatBinario $ drop 4 bitsWa
-    in realizaXorBitPorBit (binToBinArray8Bits $ rCon round) (binToBinArray8Bits $ concatChaves $ (pad4Bits $ binToBinArray $ substituteBitsSbox n1 sBox) ++ (pad4Bits $ binToBinArray $ substituteBitsSbox n0 sBox))
+    in realizaXorBitPorBit (binToBinArray8Bits $ rCon round) (binToBinArray8Bits $ concatChaves $ (pad4Bits $ binToBinArray4Bits $ substituteBitsSbox n1 sBox) ++ (pad4Bits $ binToBinArray4Bits $ substituteBitsSbox n0 sBox))
 
 concatChaves :: Show a => [a] -> Integer
 concatChaves chaves = (read $ concat $ map (show) chaves) :: Integer
@@ -162,7 +180,7 @@ invSubstituteNibbles matriz =
                           ((2,2), substituteBitsSbox (matriz!(2,2)) invSBox)]
 
 substituteBitsSbox :: Integer -> Array (Integer, Integer) e -> e
-substituteBitsSbox bits box = box!(binArrayToInt(take 2 $ binToBinArray(bits)) + 1, (binArrayToInt(drop 2 $ binToBinArray(bits))+1)) 
+substituteBitsSbox bits box = box!(binArrayToInt(take 2 $ binToBinArray4Bits(bits)) + 1, (binArrayToInt(drop 2 $ binToBinArray4Bits(bits))+1)) 
 
 binArrayToInt::[Integer] -> Integer
 binArrayToInt bits = bits!!0 * 2 + bits!!1 * 1
@@ -176,7 +194,10 @@ pad8Bits xs = replicate (8 - length ys) 0 ++ ys
     where ys = take 8 xs
 
 binToBinArray :: Integer -> [Integer]
-binToBinArray = pad4Bits . map (fromIntegral . digitToInt) . show
+binToBinArray = map (fromIntegral . digitToInt) . show
+
+binToBinArray4Bits :: Integer -> [Integer]
+binToBinArray4Bits = pad4Bits . map (fromIntegral . digitToInt) . show
 
 binToBinArray8Bits :: Integer -> [Integer]
 binToBinArray8Bits = pad8Bits . map (fromIntegral . digitToInt) . show
@@ -219,24 +240,16 @@ padTexto texto = texto ++ replicate ((length texto) `mod` 2) ' '
 concatBinario :: [Integer] -> Integer
 concatBinario = read . concatMap show
 
+sBox :: Array (Integer, Integer) Integer
 sBox = array ((1,1),(4,4)) [((1,1), 1001), ((1,2), 0100), ((1,3), 1010), ((1,4), 1011),
                             ((2,1), 1101), ((2,2), 0001), ((2,3), 1000), ((2,4), 0101),
                             ((3,1), 0110), ((3,2), 0010), ((3,3), 0000), ((3,4), 0011),
                             ((4,1), 1100), ((4,2), 1110), ((4,3), 1111), ((4,4), 0111)]
 
+invSBox :: Array (Integer, Integer) Integer
 invSBox = 
   array ((1,1),(4,4)) [ ((1,1), 1010), ((1,2), 0101), ((1,3), 1001), ((1,4), 1011),
                         ((2,1), 0001), ((2,2), 0111), ((2,3), 1000), ((2,4), 1111),
                         ((3,1), 0110), ((3,2), 0000), ((3,3), 0010), ((3,4), 0011),
                         ((4,1), 1100), ((4,2), 0100), ((4,3), 1101), ((4,4), 1110)]
-
-chave = array ((1, 1),(2,2)) [((1,1), 0010), 
-                              ((1,2), 1101),
-                              ((2,1), 0101),
-                              ((2,2), 0101)]
-
-meuArray =  array ((1, 1),(2,2)) [((1,1), 0110), 
-                                  ((1,2), 0100),
-                                  ((2,1), 1100),
-                                  ((2,2), 0000)]
 
