@@ -1,3 +1,4 @@
+import Graphics.UI.Gtk
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as BC
 import Data.List
@@ -120,3 +121,60 @@ meuArray =
                           ((2,1), 3),
                           ((2,2), 4)]
 
+hello :: IO ()
+hello = do
+  initGUI
+  window <- windowNew
+  set window [windowTitle := "AES - Criptografia", containerBorderWidth := 10]
+
+  vb <- vBoxNew False 0
+  containerAdd window vb
+
+  hb <- hBoxNew False 0
+  boxPackStart vb hb PackNatural 0
+
+  txtfield <- entryNew
+  boxPackStart hb txtfield PackNatural 50
+  
+  txtfield01 <- entryNew
+  boxPackStart hb txtfield01 PackNatural 50
+  
+  button <- buttonNewFromStock stockOk
+  boxPackStart hb button PackNatural 0
+
+  txtstack <- statusbarNew
+  boxPackStart vb txtstack PackNatural 0
+  id <- statusbarGetContextId txtstack "Line"
+
+  txtstack01 <- statusbarNew
+  boxPackStart vb txtstack01 PackNatural 0
+  id <- statusbarGetContextId txtstack01 "Line01"
+
+  widgetShowAll window
+  widgetSetSensitivity button False
+
+  onEntryActivate txtfield (saveText txtfield button txtstack id)
+  onEntryActivate txtfield01 (saveKey txtfield01 button txtstack id)
+  onPressed button (statusbarPop txtstack id)
+  onPressed button (statusbarPop txtstack01 id)
+  
+  onDestroy window mainQuit
+  mainGUI
+
+saveText :: Entry -> Button -> Statusbar -> ContextId -> IO ()
+saveText fld b text id = do
+    txt <- entryGetText fld
+    let mesg = "Palavra a ser Criptografada: " ++ txt
+
+    widgetSetSensitivity b True
+    msgid <- statusbarPush text id mesg
+    return ()
+
+saveKey :: Entry -> Button -> Statusbar -> ContextId -> IO ()
+saveKey fld b key id = do
+    keyWord <- entryGetText fld
+    let mesg = "Palavra chave: " ++ keyWord
+           
+    widgetSetSensitivity b True
+    msgid <- statusbarPush key id mesg
+    return ()
